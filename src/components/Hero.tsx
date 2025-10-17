@@ -1,6 +1,6 @@
 export default function Hero() {
   return (
-    <section className="bg-gradient-to-b from-blue-50 to-white px-6 py-16">
+    <section id="features" className="bg-gradient-to-b from-blue-50 to-white px-6 py-16">
       <div className="max-w-7xl mx-auto">
         <div className="bg-white rounded-3xl shadow-xl p-12 md:p-16">
           <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -11,14 +11,14 @@ export default function Hero() {
               <p className="text-lg text-gray-600 leading-relaxed">
                 La forma más fácil de llevar tus ingresos y gastos al día
               </p>
-              <button className="bg-blue-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-blue-700 transition shadow-lg hover:shadow-xl">
-                Empieza Gratis
+              <button className="bg-blue-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-blue-700 transition shadow-lg hover:shadow-xl" aria-label="Empezar gratis">
+                Empieza gratis
               </button>
             </div>
 
-            <div className="relative">
+            <div className="relative" aria-hidden="true">
               <div className="relative z-10">
-                <svg viewBox="0 0 400 400" className="w-full h-auto">
+                <svg viewBox="0 0 400 400" className="w-full h-auto" role="img" aria-label="Ilustración decorativa">
                   <rect x="50" y="280" width="300" height="80" rx="10" fill="#cbd5e1" opacity="0.3"/>
 
                   <circle cx="200" cy="180" r="80" fill="#34d399"/>
@@ -77,3 +77,4 @@ export default function Hero() {
     </section>
   );
 }
+
