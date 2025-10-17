@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import { DollarSign, FileText, Scale } from "lucide-react";
+
 
 export default function Dashboard() {
   const { user, token } = useAuth();
@@ -22,24 +24,36 @@ export default function Dashboard() {
           <p className="text-gray-600 mt-1">Aquí verás un resumen de tu actividad.</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="bg-white rounded-2xl p-6 shadow">
-            <h2 className="text-sm font-medium text-gray-500">Ingresos</h2>
-            <p className="mt-2 text-3xl font-bold text-green-600">$ 0</p>
-            <p className="text-xs text-gray-500 mt-1">Este mes</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-8">
+          {/* Ingresos Totales */}
+          <div className="flex flex-col items-center bg-white rounded-2xl shadow-md p-6 hover:shadow-lg transition-all">
+            <div className="p-4 rounded-full bg-green-500 shadow-md mb-4 flex items-center justify-center">
+              <DollarSign size={28} color="white" strokeWidth={2} />
+            </div>
+            <p className="text-gray-500 text-sm">Ingresos Totales (mes actual)</p>
+            <h2 className="text-2xl font-bold text-gray-800 mt-1">$10.730</h2>
           </div>
-          <div className="bg-white rounded-2xl p-6 shadow">
-            <h2 className="text-sm font-medium text-gray-500">Gastos</h2>
-            <p className="mt-2 text-3xl font-bold text-red-600">$ 0</p>
-            <p className="text-xs text-gray-500 mt-1">Este mes</p>
+
+          {/* Gastos Totales */}
+          <div className="flex flex-col items-center bg-white rounded-2xl shadow-md p-6 hover:shadow-lg transition-all">
+            <div className="p-4 rounded-full bg-rose-500 shadow-md mb-4 flex items-center justify-center">
+              <FileText size={28} color="white" strokeWidth={2} />
+            </div>
+            <p className="text-gray-500 text-sm">Gastos Totales (mes actual)</p>
+            <h2 className="text-2xl font-bold text-gray-800 mt-1">$8.420</h2>
           </div>
-          <div className="bg-white rounded-2xl p-6 shadow">
-            <h2 className="text-sm font-medium text-gray-500">Balance</h2>
-            <p className="mt-2 text-3xl font-bold text-gray-900">$ 0</p>
-            <p className="text-xs text-gray-500 mt-1">Actual</p>
+
+          {/* Balance Neto */}
+          <div className="flex flex-col items-center bg-white rounded-2xl shadow-md p-6 hover:shadow-lg transition-all">
+            <div className="p-4 rounded-full bg-indigo-500 shadow-md mb-4 flex items-center justify-center">
+              <Scale size={28} color="white" strokeWidth={2} />
+            </div>
+            <p className="text-gray-500 text-sm">Balance Neto (mes actual)</p>
+            <h2 className="text-2xl font-bold text-gray-800 mt-1">$2.310</h2>
           </div>
         </div>
       </div>
     </div>
   );
 }
+
