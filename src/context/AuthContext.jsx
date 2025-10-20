@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { validateStatus, initProfile } from '../services/FiscalProfileService.js';
 
 const AuthContext = createContext(null);
 
@@ -18,6 +19,8 @@ export function AuthProvider({ children }) {
       return null;
     }
   });
+  const [isValidatingProfile, setIsValidatingProfile] = useState(false);
+  const didValidateRef = useRef(false);
 
   useEffect(() => {
     // Keep state in sync if other tabs log out/in
@@ -47,7 +50,54 @@ export function AuthProvider({ children }) {
     window.location.assign('/');
   };
 
-  const value = useMemo(() => ({ token, user, setToken, setUser, logout }), [token, user]);
+  useEffect(() => {
+    // Ejecutar validación solo una vez por login (cuando aparece token)
+    if (!token || !user) {
+      didValidateRef.current = false;
+      return;
+    }
+    if (didValidateRef.current) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        setIsValidatingProfile(true);
+        const res = await validateStatus(token);
+        if (cancelled) return;
+        const status = res?.status;
+        if (status === 'none') {
+          try {
+            await initProfile(token);
+          } catch {}
+          window.location.assign('/perfil-fiscal/A');
+        } else if (status === 'draft') {
+          const section = res?.completedSection || 'A';
+          window.location.assign(`/perfil-fiscal/${section}`);
+        } else if (status === 'complete') {
+          // Si ya está completo, a dashboard
+          window.location.assign('/dashboard');
+        } else {
+          // Estado desconocido: ir al dashboard por defecto
+          window.location.assign('/dashboard');
+        }
+      } catch (e) {
+        console.error('Error validando perfil fiscal:', e);
+        // En caso de error, continuar a dashboard para no bloquear
+        window.location.assign('/dashboard');
+      } finally {
+        if (!cancelled) {
+          setIsValidatingProfile(false);
+          didValidateRef.current = true;
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token, user]);
+
+  const value = useMemo(() => ({ token, user, setToken, setUser, logout, isValidatingProfile }), [token, user, isValidatingProfile]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
@@ -56,4 +106,3 @@ export function useAuth() {
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');
   return ctx;
 }
-

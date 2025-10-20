@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import InputField from './InputField';
 import { loginUser } from '../services/AuthService';
+import { useAuth } from '../context/AuthContext.jsx';
 
 function validate(values) {
   const errors = {};
@@ -24,6 +25,7 @@ export default function LoginForm() {
   const [submitting, setSubmitting] = useState(false);
   const [globalMessage, setGlobalMessage] = useState(null);
   const [globalType, setGlobalType] = useState(''); // 'success' | 'info' | 'error'
+  const { setToken, setUser } = useAuth();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -52,11 +54,12 @@ export default function LoginForm() {
           localStorage.setItem('token', jwt);
           localStorage.setItem('user', JSON.stringify(user));
         } catch {}
+        // Reflejar en contexto para disparar validación de perfil fiscal
+        setToken(jwt);
+        setUser(user);
         setGlobalType('success');
         setGlobalMessage('¡Bienvenido de nuevo a Montri!');
-        setTimeout(() => {
-          window.location.assign('/dashboard');
-        }, 800);
+        // No redirigimos aquí; AuthContext se encargará de validar y redirigir
         return;
       }
 
