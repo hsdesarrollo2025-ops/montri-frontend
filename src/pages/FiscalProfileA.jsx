@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import { updateSectionA, getFiscalProfile } from '../services/FiscalProfileService.js';
+import { updateSectionA, updateSection, getProfileByUser } from '../services/FiscalProfileService.js';
 import FiscalProgress from '../components/FiscalProgress.jsx';
 
 const PROVINCIAS_AR = [
@@ -88,8 +88,8 @@ export default function FiscalProfileA() {
 
     // Intentar traer datos del backend si existen (tienen prioridad)
     (async () => {
-      if (!user?.id || !token) return;
-      const data = await getFiscalProfile(token, user.id);
+      if (!token) return;
+      const data = await getProfileByUser(token, user?.id);
       if (!data) return;
       try {
         const a = data?.sectionA || data?.a || {};
@@ -280,6 +280,33 @@ export default function FiscalProfileA() {
       }
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleExitAndSave() {
+    try {
+      if (!token) throw new Error('Usuario no autenticado');
+      await updateSection('A', {
+        firstName: form.firstName,
+        lastName: form.lastName,
+        documentType: form.documentType,
+        documentNumber: form.documentNumber,
+        cuit: form.cuit,
+        addressStreet: form.addressStreet,
+        addressNumber: form.addressNumber,
+        city: form.city,
+        province: form.province,
+        postalCode: form.postalCode,
+        email: form.email,
+        phone: form.phone,
+      }, token, { draft: true });
+      setToastType('success');
+      setToastMsg('Borrador guardado');
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Error al guardar antes de salir:', error);
+      setToastType('error');
+      setToastMsg('Ocurrió un error al guardar los datos. Intenta nuevamente.');
     }
   }
 
@@ -503,7 +530,7 @@ export default function FiscalProfileA() {
             <button
               type="button"
               className="text-gray-500 hover:text-gray-700"
-              onClick={() => navigate('/dashboard')}
+              onClick={handleExitAndSave}
             >
               Salir y continuar después
             </button>

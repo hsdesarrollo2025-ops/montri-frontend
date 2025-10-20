@@ -1,6 +1,33 @@
 const BASE = 'https://montri-backend.onrender.com/api/fiscal-profile';
 const TAX_BASE = 'https://montri-backend.onrender.com/api';
 
+// Generic update of a fiscal profile section using JWT-bound user context
+export async function updateSection(section, data, jwt, opts = {}) {
+  try {
+    const draft = Boolean(opts && opts.draft);
+    const url = `${BASE}/section/${section}${draft ? '?draft=true' : ''}`;
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${jwt}`,
+      },
+      body: JSON.stringify(draft ? { ...(data || {}), draft: true } : (data || {})),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const err = new Error(json?.error?.message || json?.message || 'Error al guardar la sección');
+      err.status = res.status;
+      err.payload = json;
+      throw err;
+    }
+    return json;
+  } catch (error) {
+    console.error('Error en updateSection:', error);
+    throw error;
+  }
+}
+
 export async function validateStatus(jwt) {
   try {
     const res = await fetch(`${BASE}/validate-status`, {
@@ -130,6 +157,63 @@ export async function updateSectionB(jwt, payload) {
   }
 }
 
+// Get fiscal profile for the currently authenticated user (by JWT)
+export async function getProfileByUser(jwt, fallbackUserId) {
+  try {
+    const res = await fetch(`${BASE}/me`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${jwt}`,
+      },
+    });
+    if (res.status === 404) {
+      // Fallback to legacy endpoint by userId if provided
+      if (fallbackUserId) {
+        try {
+          const resLegacy = await fetch(`${BASE}/${fallbackUserId}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${jwt}`,
+            },
+          });
+          if (resLegacy.ok) {
+            return await resLegacy.json().catch(() => ({}));
+          }
+        } catch (e) {
+          console.error('Fallback a /:userId falló:', e);
+        }
+      }
+      try {
+        await fetch(`${BASE}/init`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${jwt}`,
+          },
+          body: JSON.stringify({}),
+        });
+      } catch (e) {
+        console.error('Error al inicializar perfil fiscal tras 404:', e);
+      }
+      return null;
+    }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const err = new Error(data?.error?.message || data?.message || 'Error al obtener perfil fiscal');
+      err.status = res.status;
+      err.payload = data;
+      throw err;
+    }
+    return data;
+  } catch (error) {
+    console.error('Error en getProfileByUser:', error);
+    return null;
+  }
+}
+
+// Deprecated: direct by userId. Prefer getProfileByUser(jwt).
 export async function getFiscalProfile(jwt, userId) {
   if (!userId) return null;
   try {

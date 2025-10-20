@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import { getTaxCategories, updateSectionB, getFiscalProfile } from '../services/FiscalProfileService.js';
+import { getTaxCategories, updateSectionB, updateSection, getProfileByUser } from '../services/FiscalProfileService.js';
 import FiscalProgress from '../components/FiscalProgress.jsx';
 
 const PROVINCIAS_AR = [
@@ -92,8 +92,8 @@ export default function FiscalProfileB() {
       }
     } catch {}
     (async () => {
-      if (!user?.id || !token) return;
-      const data = await getFiscalProfile(token, user.id);
+      if (!token) return;
+      const data = await getProfileByUser(token, user?.id);
       const b = data?.sectionB || data?.b || {};
       if (b && typeof b === 'object') {
         setForm((f) => ({
@@ -212,6 +212,27 @@ export default function FiscalProfileB() {
       }
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleExitAndSave() {
+    try {
+      if (!token) throw new Error('Usuario no autenticado');
+    await updateSection('B', {
+      regimen: form.regimen,
+      startDate: form.startDate,
+      category: form.category,
+      annualRevenue: form.annualRevenue,
+      activity: form.activity,
+      province: form.province,
+      customerType: form.customerType,
+      monthlyOperations: form.monthlyOperations,
+      hasEmployees: form.hasEmployees,
+    }, token, { draft: true });
+      try { localStorage.setItem(draftKey, JSON.stringify(form)); } catch {}
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Error al guardar antes de salir:', error);
     }
   }
 
@@ -396,7 +417,7 @@ export default function FiscalProfileB() {
             <button
               type="button"
               className="text-gray-500 hover:text-gray-700"
-              onClick={() => { try { localStorage.setItem(draftKey, JSON.stringify(form)); } catch {}; navigate('/dashboard'); }}
+              onClick={handleExitAndSave}
             >
               Salir y continuar después
             </button>
