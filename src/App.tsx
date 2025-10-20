@@ -1,6 +1,8 @@
 import { Routes, Route } from 'react-router-dom';
 import { useAuth } from './context/AuthContext.jsx';
 import FiscalProfileLoader from './pages/FiscalProfileLoader.jsx';
+import FiscalProfileA from './pages/FiscalProfileA.jsx';
+import FiscalProfileB from './pages/FiscalProfileB.jsx';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Footer from './components/Footer';
@@ -19,6 +21,8 @@ function App() {
           <Route path="/" element={<Hero />} />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/perfil-fiscal/A" element={<FiscalProfileA />} />
+          <Route path="/perfil-fiscal/B" element={<FiscalProfileB />} />
           <Route path="/dashboard" element={<Dashboard />} />
         </Routes>
       </main>

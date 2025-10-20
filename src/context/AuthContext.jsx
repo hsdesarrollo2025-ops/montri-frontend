@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { validateStatus, initProfile } from '../services/FiscalProfileService.js';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { validateStatus, initProfile } from '../services/FiscalProfileService';
 
 const AuthContext = createContext(null);
 
@@ -20,7 +21,8 @@ export function AuthProvider({ children }) {
     }
   });
   const [isValidatingProfile, setIsValidatingProfile] = useState(false);
-  const didValidateRef = useRef(false);
+  const [profileChecked, setProfileChecked] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Keep state in sync if other tabs log out/in
@@ -47,57 +49,48 @@ export function AuthProvider({ children }) {
     } catch {}
     setToken(null);
     setUser(null);
+    setProfileChecked(false);
     window.location.assign('/');
   };
 
+  const jwt = token;
+
   useEffect(() => {
-    // Ejecutar validación solo una vez por login (cuando aparece token)
-    if (!token || !user) {
-      didValidateRef.current = false;
-      return;
+    if (jwt && !profileChecked) {
+      checkFiscalProfile();
     }
-    if (didValidateRef.current) return;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jwt]);
 
-    let cancelled = false;
-    (async () => {
-      try {
-        setIsValidatingProfile(true);
-        const res = await validateStatus(token);
-        if (cancelled) return;
-        const status = res?.status;
-        if (status === 'none') {
-          try {
-            await initProfile(token);
-          } catch {}
-          window.location.assign('/perfil-fiscal/A');
-        } else if (status === 'draft') {
-          const section = res?.completedSection || 'A';
-          window.location.assign(`/perfil-fiscal/${section}`);
-        } else if (status === 'complete') {
-          // Si ya está completo, a dashboard
-          window.location.assign('/dashboard');
-        } else {
-          // Estado desconocido: ir al dashboard por defecto
-          window.location.assign('/dashboard');
-        }
-      } catch (e) {
-        console.error('Error validando perfil fiscal:', e);
-        // En caso de error, continuar a dashboard para no bloquear
-        window.location.assign('/dashboard');
-      } finally {
-        if (!cancelled) {
-          setIsValidatingProfile(false);
-          didValidateRef.current = true;
-        }
+  async function checkFiscalProfile() {
+    try {
+      setIsValidatingProfile(true);
+      const data = await validateStatus(jwt);
+
+      if (data.status === 'none') {
+        await initProfile(jwt);
+        navigate('/perfil-fiscal/A');
+      } else if (data.status === 'draft') {
+        const section = data.completedSection || 'A';
+        navigate(`/perfil-fiscal/${section}`);
+      } else if (data.status === 'complete') {
+        navigate('/dashboard');
+      } else {
+        // Estado desconocido: ir al dashboard por defecto
+        navigate('/dashboard');
       }
-    })();
+    } catch (err) {
+      console.error('Error al validar perfil fiscal:', err);
+    } finally {
+      setIsValidatingProfile(false);
+      setProfileChecked(true); // evita reejecuciones
+    }
+  }
 
-    return () => {
-      cancelled = true;
-    };
-  }, [token, user]);
-
-  const value = useMemo(() => ({ token, user, setToken, setUser, logout, isValidatingProfile }), [token, user, isValidatingProfile]);
+  const value = useMemo(
+    () => ({ token, user, setToken, setUser, logout, isValidatingProfile, profileChecked }),
+    [token, user, isValidatingProfile, profileChecked]
+  );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
