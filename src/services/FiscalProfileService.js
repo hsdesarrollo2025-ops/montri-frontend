@@ -1,5 +1,8 @@
-const BASE = 'https://montri-backend.onrender.com/api/fiscal-profile';
-const TAX_BASE = 'https://montri-backend.onrender.com/api';
+const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL)
+  ? import.meta.env.VITE_API_URL
+  : (process.env.VITE_API_URL || 'http://localhost:1337');
+const BASE = `${API_BASE}/api/fiscal-profile`;
+const TAX_BASE = `${API_BASE}/api`;
 
 // Generic update of a fiscal profile section using JWT-bound user context
 export async function updateSection(section, data, jwt, opts = {}) {
