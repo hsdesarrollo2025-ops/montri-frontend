@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import { getTaxCategories, updateSectionB } from '../services/FiscalProfileService.js';
+import { getTaxCategories, updateSectionB, getFiscalProfile } from '../services/FiscalProfileService.js';
+import FiscalProgress from '../components/FiscalProgress.jsx';
 
 const PROVINCIAS_AR = [
   'Buenos Aires',
@@ -54,6 +55,8 @@ export default function FiscalProfileB() {
   const [serverError, setServerError] = useState('');
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(false);
+  const [draftStatus, setDraftStatus] = useState('');
+  const saveTimerRef = useRef(null);
 
   const fmtARS = useMemo(() => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }), []);
 
@@ -75,6 +78,55 @@ export default function FiscalProfileB() {
   }, [form.regimen, categories.length]);
 
   const provinciasSet = useMemo(() => new Set(PROVINCIAS_AR), []);
+
+  // Draft key per user
+  const draftKey = useMemo(() => `fiscal_profile_b_draft:${user?.id || user?.email || 'anon'}`, [user?.id, user?.email]);
+
+  // Cargar borrador y datos backend (si existen tienen prioridad)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (raw) {
+        const saved = JSON.parse(raw);
+        setForm((f) => ({ ...f, ...saved }));
+      }
+    } catch {}
+    (async () => {
+      if (!user?.id || !token) return;
+      const data = await getFiscalProfile(token, user.id);
+      const b = data?.sectionB || data?.b || {};
+      if (b && typeof b === 'object') {
+        setForm((f) => ({
+          ...f,
+          regimen: b.regimen || f.regimen,
+          startDate: b.startDate || f.startDate,
+          category: b.category || f.category,
+          annualRevenue: b.annualRevenue != null ? String(b.annualRevenue) : f.annualRevenue,
+          activity: b.activity || f.activity,
+          province: b.province || f.province,
+          customerType: b.customerType || f.customerType,
+          monthlyOperations: b.monthlyOperations != null ? String(b.monthlyOperations) : f.monthlyOperations,
+          hasEmployees: typeof b.hasEmployees === 'boolean' ? b.hasEmployees : f.hasEmployees,
+        }));
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftKey, token, user?.id]);
+
+  // Guardado automático del borrador con debounce
+  useEffect(() => {
+    setDraftStatus('guardando');
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      try {
+        localStorage.setItem(draftKey, JSON.stringify(form));
+        setDraftStatus('guardado');
+      } catch {}
+    }, 500);
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [form, draftKey]);
 
   const onChange = (e) => {
     const { name, type } = e.target;
@@ -138,6 +190,7 @@ export default function FiscalProfileB() {
         monthlyOperations: form.monthlyOperations ? Number(form.monthlyOperations) : null,
         hasEmployees: !!form.hasEmployees,
       });
+      try { localStorage.removeItem(draftKey); } catch {}
       navigate('/perfil-fiscal/C');
     } catch (err) {
       const status = err?.status;
@@ -170,6 +223,7 @@ export default function FiscalProfileB() {
           <p className="text-gray-600 mt-1">Completá la información para continuar con tu perfil fiscal.</p>
         </div>
 
+        <FiscalProgress current="B" />
         <form onSubmit={onSubmit} className="bg-white rounded-2xl shadow-md p-6 space-y-5" noValidate>
           {serverError ? (
             <div className="p-3 rounded-md bg-red-50 text-red-700 border border-red-200" role="alert">{serverError}</div>
@@ -340,6 +394,13 @@ export default function FiscalProfileB() {
               Volver
             </button>
             <button
+              type="button"
+              className="text-gray-500 hover:text-gray-700"
+              onClick={() => { try { localStorage.setItem(draftKey, JSON.stringify(form)); } catch {}; navigate('/dashboard'); }}
+            >
+              Salir y continuar después
+            </button>
+            <button
               type="submit"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
               disabled={saving}
@@ -361,4 +422,3 @@ export default function FiscalProfileB() {
     </div>
   );
 }
-

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import { updateSectionA } from '../services/FiscalProfileService.js';
+import { updateSectionA, getFiscalProfile } from '../services/FiscalProfileService.js';
+import FiscalProgress from '../components/FiscalProgress.jsx';
 
 const PROVINCIAS_AR = [
   'Buenos Aires',
@@ -80,11 +81,40 @@ export default function FiscalProfileA() {
           email: initial.email,
         };
         setForm(merged);
-        return;
+      } else {
+        setForm(initial);
       }
-    } catch {}
-    setForm(initial);
-  }, [initial, draftKey]);
+    } catch { setForm(initial); }
+
+    // Intentar traer datos del backend si existen (tienen prioridad)
+    (async () => {
+      if (!user?.id || !token) return;
+      const data = await getFiscalProfile(token, user.id);
+      if (!data) return;
+      try {
+        const a = data?.sectionA || data?.a || {};
+        const next = { ...form };
+        const map = {
+          firstName: a.firstName,
+          lastName: a.lastName,
+          documentType: a.documentType,
+          documentNumber: a.documentNumber,
+          cuit: a.cuit,
+          addressStreet: a.addressStreet,
+          addressNumber: a.addressNumber,
+          city: a.city,
+          province: a.province,
+          postalCode: a.postalCode,
+          email: a.email,
+          phone: a.phone,
+        };
+        Object.keys(map).forEach((k) => {
+          if (map[k] !== undefined && map[k] !== null && map[k] !== '') next[k] = String(map[k]);
+        });
+        setForm((prev) => ({ ...prev, ...next }));
+      } catch {}
+    })();
+  }, [initial, draftKey, token, user?.id]);
 
   const normalizeDigits = (str) => String(str || '').replace(/\D/g, '');
   const formatCuit = (digits) => {
@@ -197,7 +227,7 @@ export default function FiscalProfileA() {
         localStorage.setItem(draftKey, JSON.stringify(form));
         setDraftStatus('guardado');
       } catch {}
-    }, 600);
+    }, 500);
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
@@ -260,6 +290,7 @@ export default function FiscalProfileA() {
           <h1 className="text-2xl font-bold text-gray-900">Completá tus datos personales para comenzar tu perfil fiscal</h1>
           <p className="text-gray-600 mt-1">Esta información se utilizará para definir tu situación fiscal en Montri.</p>
         </div>
+        <FiscalProgress current="A" />
 
         <form onSubmit={onSubmit} className="bg-white rounded-2xl shadow-md p-6 space-y-5" noValidate>
           {serverError ? (
