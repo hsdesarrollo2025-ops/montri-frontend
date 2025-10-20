@@ -2,10 +2,17 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 export async function registerUser(data) {
   try {
+    const payload = {
+      username: String(data.email || '').split('@')[0],
+      email: data.email,
+      password: data.password,
+      firstName: data.firstName,
+      lastName: data.lastName,
+    };
     const response = await fetch(`${API_URL}/api/auth/local/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {

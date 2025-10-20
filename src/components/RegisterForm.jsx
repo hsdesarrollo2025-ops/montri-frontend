@@ -18,14 +18,6 @@ function validate(values) {
       errors.email = 'Ingresá un correo válido.';
     }
   }
-  if (!values.cuit) {
-    errors.cuit = 'El CUIT es requerido.';
-  } else {
-    const cuitRegex = /^\d{2}-\d{8}-\d$/;
-    if (!cuitRegex.test(values.cuit)) {
-      errors.cuit = 'Formato de CUIT inválido (99-99999999-9).';
-    }
-  }
   if (!values.password) {
     errors.password = 'La contraseña es requerida.';
   } else {
@@ -50,7 +42,6 @@ export default function RegisterForm() {
     firstName: '',
     lastName: '',
     email: '',
-    cuit: '',
     password: '',
     confirmPassword: '',
     acceptedTerms: false,
@@ -78,20 +69,12 @@ export default function RegisterForm() {
     setSubmitting(true);
     setGlobalMessage(null);
     try {
-      const username = values.email.split('@')[0];
-      const payload = {
-        username,
+      const res = await registerUser({
         email: values.email,
         password: values.password,
         firstName: values.firstName,
         lastName: values.lastName,
-        cuit: values.cuit,
-        planType: 'free',
-        acceptedTerms: true,
-        provider: 'local',
-      };
-
-      const res = await registerUser(payload);
+      });
       const { user, jwt } = res || {};
 
       if (user && user.confirmed && jwt) {
@@ -100,7 +83,7 @@ export default function RegisterForm() {
           localStorage.setItem('user', JSON.stringify(user));
         } catch {}
         setGlobalType('success');
-        setGlobalMessage('¡Bienvenido a Montri! 🎉 Tu cuenta fue creada con éxito.');
+        setGlobalMessage('¡Bienvenido a Montri! Tu cuenta fue creada con éxito.');
         // Redirigir al dashboard
         setTimeout(() => {
           window.location.assign('/dashboard');
@@ -199,16 +182,7 @@ export default function RegisterForm() {
         disabled={submitting}
       />
 
-      <InputField
-        label="CUIT"
-        name="cuit"
-        value={values.cuit}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        placeholder="99-99999999-9"
-        error={errors.cuit}
-        disabled={submitting}
-      />
+      {/* CUIT eliminado del registro: se completa en el Perfil Fiscal (Sección A) */}
 
       <InputField
         label="Contraseña"
@@ -260,12 +234,10 @@ export default function RegisterForm() {
         type="submit"
         disabled={submitting}
         className={`w-full py-2 rounded-xl font-semibold text-white transition shadow ` +
-          (submitting
-            ? 'bg-green-400 cursor-not-allowed'
-            : 'bg-green-500 hover:bg-green-600')}
+          (submitting ? 'bg-green-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600')}
         aria-busy={submitting}
       >
-        {submitting ? 'Creando cuenta…' : 'Crear cuenta'}
+        {submitting ? 'Creando cuenta...' : 'Crear cuenta'}
       </button>
 
       <p className="mt-4 text-center text-sm text-gray-600">
