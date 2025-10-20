@@ -48,29 +48,39 @@ export async function initProfile(jwt) {
   }
 }
 
-export async function updateSectionA(jwt, payload) {
+export async function updateSectionA(jwt, data) {
   try {
-    const res = await fetch(`${BASE}/section/A`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${jwt}`,
-      },
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      const err = new Error(
-        data?.error?.message || data?.message || 'Error al guardar la Sección A'
-      );
-      err.status = res.status;
-      err.payload = data;
+    const payload = {
+      ...data,
+      cuit: String(data.cuit || '').replace(/[^0-9]/g, ''),
+      addressNumber: Number(data.addressNumber),
+      postalCode: Number(data.postalCode),
+    };
+
+    const response = await fetch(
+      `${BASE}/section/A`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${jwt}`,
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const dataRes = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const err = new Error(dataRes?.error?.message || dataRes?.message || 'Error al guardar los datos');
+      err.status = response.status;
+      err.payload = dataRes;
       throw err;
     }
-    return data;
-  } catch (error) {
-    console.error('Error en updateSectionA:', error);
-    throw error;
+
+    return dataRes;
+  } catch (err) {
+    console.error('Error en updateSectionA:', err);
+    throw err;
   }
 }
 

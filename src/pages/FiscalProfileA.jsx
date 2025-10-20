@@ -59,11 +59,12 @@ export default function FiscalProfileA() {
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const [serverError, setServerError] = useState('');
-  const [draftStatus, setDraftStatus] = useState(''); // '', 'guardando', 'guardado'
+  const [draftStatus, setDraftStatus] = useState('');
+  const [toastMsg, setToastMsg] = useState('');
+  const [toastType, setToastType] = useState('success');
   const saveTimerRef = useRef(null);
 
   useEffect(() => {
-    // Merge con borrador guardado si existe
     try {
       const raw = localStorage.getItem('fiscal_profile_a_draft');
       if (raw) {
@@ -91,11 +92,10 @@ export default function FiscalProfileA() {
       value = formatCuit(value);
     }
     if (name === 'documentType') {
-      // Al cambiar a DNI, forzar numérico en el documento
       setForm((f) => {
         const next = { ...f, documentType: value };
         if (value === 'DNI') {
-          next.documentNumber = normalizeDigits(f.documentNumber).slice(0, 11);
+          next.documentNumber = normalizeDigits(f.documentNumber).slice(0, 10);
         }
         return next;
       });
@@ -105,14 +105,13 @@ export default function FiscalProfileA() {
     if (name === 'documentNumber') {
       const type = form.documentType;
       if (type === 'DNI') {
-        value = normalizeDigits(value).slice(0, 11);
+        value = normalizeDigits(value).slice(0, 10);
       } else {
         value = String(value).slice(0, 20);
       }
     }
 
     setForm((f) => ({ ...f, [name]: value }));
-    // Validación en vivo por campo
     setErrors((prev) => ({ ...prev, [name]: validateField(name, { ...form, [name]: value }) }));
   };
 
@@ -121,14 +120,14 @@ export default function FiscalProfileA() {
 
   function validateField(key, state = form) {
     const value = (state[key] ?? '').toString().trim();
-    if (key === 'firstName') return value ? '' : 'Ingresá un nombre válido.';
-    if (key === 'lastName') return value ? '' : 'Ingresá un apellido válido.';
+    if (key === 'firstName') return value.length >= 2 ? '' : 'Ingresá un nombre válido (mínimo 2 caracteres).';
+    if (key === 'lastName') return value.length >= 2 ? '' : 'Ingresá un apellido válido (mínimo 2 caracteres).';
     if (key === 'documentType') return value ? '' : 'Seleccioná un tipo de documento.';
     if (key === 'documentNumber') {
       if (!value) return 'Ingresá un número de documento válido.';
       if (state.documentType === 'DNI') {
         const digits = normalizeDigits(value);
-        if (digits.length < 7 || digits.length > 11) return 'Ingresá un DNI válido.';
+        if (digits.length < 7 || digits.length > 10) return 'Ingresá un DNI válido (7 a 10 dígitos).';
       } else {
         if (value.length < 4) return 'Ingresá un documento válido.';
       }
@@ -147,7 +146,11 @@ export default function FiscalProfileA() {
       if (!provinciasSet.has(value)) return 'Seleccioná una provincia válida.';
       return '';
     }
-    if (key === 'postalCode') return value ? '' : 'Ingresá un código postal válido.';
+    if (key === 'postalCode') {
+      const digits = normalizeDigits(value);
+      if (digits.length < 4 || digits.length > 5) return 'Ingresá un código postal válido (4 a 5 dígitos).';
+      return '';
+    }
     if (key === 'email') return emailRe.test(value) ? '' : 'Ingresá un correo electrónico válido.';
     return '';
   }
@@ -175,7 +178,6 @@ export default function FiscalProfileA() {
     return Object.keys(e).length === 0;
   }
 
-  // Guardado automático (borrador) con debounce
   useEffect(() => {
     if (!form) return;
     setDraftStatus('guardando');
@@ -184,9 +186,7 @@ export default function FiscalProfileA() {
       try {
         localStorage.setItem('fiscal_profile_a_draft', JSON.stringify(form));
         setDraftStatus('guardado');
-      } catch {
-        // ignorar
-      }
+      } catch {}
     }, 600);
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
@@ -204,7 +204,7 @@ export default function FiscalProfileA() {
         lastName: form.lastName.trim(),
         documentType: form.documentType,
         documentNumber: form.documentNumber.trim(),
-        cuit: normalizeDigits(form.cuit),
+        cuit: form.cuit,
         addressStreet: form.addressStreet.trim(),
         addressNumber: form.addressNumber.trim(),
         city: form.city.trim(),
@@ -214,12 +214,13 @@ export default function FiscalProfileA() {
         phone: form.phone.trim(),
       });
       try { localStorage.removeItem('fiscal_profile_a_draft'); } catch {}
-      navigate('/perfil-fiscal/B');
+      setToastType('success');
+      setToastMsg('Datos guardados correctamente');
+      setTimeout(() => navigate('/perfil-fiscal/B'), 700);
     } catch (err) {
       const status = err?.status;
       const payload = err?.payload;
       if (status === 400 || status === 422) {
-        // Intentar mapear errores del backend si vienen por campo
         const beErrors = payload?.errors || payload?.error?.errors;
         if (beErrors && typeof beErrors === 'object') {
           const mapped = {};
@@ -229,11 +230,13 @@ export default function FiscalProfileA() {
           });
           if (Object.keys(mapped).length) setErrors((prev) => ({ ...prev, ...mapped }));
         }
-        const msg = payload?.message || payload?.error?.message;
-        if (msg) setServerError(String(msg));
-        else if (!beErrors) setServerError('Revisá los datos ingresados.');
+        setServerError('Verificá los datos ingresados. Algunos campos no cumplen el formato requerido.');
+        setToastType('error');
+        setToastMsg(err.message || 'Error al guardar los datos');
       } else {
         setServerError('Ocurrió un error al guardar la información. Intentalo nuevamente.');
+        setToastType('error');
+        setToastMsg(err.message || 'Error al guardar los datos');
       }
     } finally {
       setSaving(false);
@@ -470,12 +473,22 @@ export default function FiscalProfileA() {
         {saving && (
           <div className="fixed inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center z-50">
             <div className="bg-white border border-gray-100 shadow-lg rounded-2xl px-6 py-5 flex items-center gap-4">
-              <span className="inline-block h-5 w-5 rounded-full border-2 border-green-500 border-top-transparent border-t-transparent animate-spin" aria-hidden="true" />
+              <span className="inline-block h-5 w-5 rounded-full border-2 border-green-500 border-t-transparent animate-spin" aria-hidden="true" />
               <p className="text-gray-800 font-medium">Guardando información...</p>
             </div>
+          </div>
+        )}
+
+        {!!toastMsg && (
+          <div
+            className={`fixed right-4 bottom-6 z-50 px-4 py-3 rounded-lg shadow-md text-white ${toastType === 'success' ? 'bg-green-600' : 'bg-rose-600'}`}
+            role="status" aria-live="polite"
+          >
+            {toastMsg}
           </div>
         )}
       </div>
     </div>
   );
 }
+
