@@ -64,19 +64,27 @@ export default function FiscalProfileA() {
   const [toastType, setToastType] = useState('success');
   const saveTimerRef = useRef(null);
 
+  const draftKey = useMemo(() => `fiscal_profile_a_draft:${user?.id || user?.email || 'anon'}`, [user?.id, user?.email]);
+
   useEffect(() => {
     try {
-      const raw = localStorage.getItem('fiscal_profile_a_draft');
+      const raw = localStorage.getItem(draftKey);
       if (raw) {
         const saved = JSON.parse(raw);
-        // Nunca sobreescribir campos de solo lectura que vienen del backend
-        const merged = { ...initial, ...saved, cuit: initial.cuit, email: initial.email };
+        // Mantener datos del backend para evitar arrastrar de otro usuario
+        const merged = {
+          ...initial,
+          ...saved,
+          firstName: initial.firstName,
+          lastName: initial.lastName,
+          email: initial.email,
+        };
         setForm(merged);
         return;
       }
     } catch {}
     setForm(initial);
-  }, [initial]);
+  }, [initial, draftKey]);
 
   const normalizeDigits = (str) => String(str || '').replace(/\D/g, '');
   const formatCuit = (digits) => {
@@ -91,7 +99,7 @@ export default function FiscalProfileA() {
     let { value } = e.target;
 
     if (name === 'cuit') {
-      value = formatCuit(value);
+      value = normalizeDigits(value).slice(0, 11);
     }
     if (name === 'documentType') {
       setForm((f) => {
@@ -137,7 +145,7 @@ export default function FiscalProfileA() {
     }
     if (key === 'cuit') {
       const digits = normalizeDigits(value);
-      if (digits.length !== 11) return 'El CUIT debe tener 11 dígitos.';
+      if (digits.length !== 11) return 'Ingresá tu CUIT sin puntos ni guiones';
       return '';
     }
     if (key === 'addressStreet') return value ? '' : 'Ingresá una calle válida.';
@@ -186,14 +194,14 @@ export default function FiscalProfileA() {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
       try {
-        localStorage.setItem('fiscal_profile_a_draft', JSON.stringify(form));
+        localStorage.setItem(draftKey, JSON.stringify(form));
         setDraftStatus('guardado');
       } catch {}
     }, 600);
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [form]);
+  }, [form, draftKey]);
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -215,7 +223,7 @@ export default function FiscalProfileA() {
         email: form.email.trim(),
         phone: form.phone.trim(),
       });
-      try { localStorage.removeItem('fiscal_profile_a_draft'); } catch {}
+      try { localStorage.removeItem(draftKey); } catch {}
       setToastType('success');
       setToastMsg('Datos guardados correctamente');
       setTimeout(() => navigate('/perfil-fiscal/B'), 700);
@@ -334,7 +342,6 @@ export default function FiscalProfileA() {
                 value={form.cuit}
                 onChange={onChange}
                 placeholder="Ej: 20123456789"
-                readOnly
                 aria-invalid={Boolean(errors.cuit) || undefined}
                 aria-describedby={errors.cuit ? 'cuit-error' : undefined}
                 className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 bg-gray-50 text-gray-700"
