@@ -69,7 +69,9 @@ export default function FiscalProfileA() {
       const raw = localStorage.getItem('fiscal_profile_a_draft');
       if (raw) {
         const saved = JSON.parse(raw);
-        setForm({ ...initial, ...saved });
+        // Nunca sobreescribir campos de solo lectura que vienen del backend
+        const merged = { ...initial, ...saved, cuit: initial.cuit, email: initial.email };
+        setForm(merged);
         return;
       }
     } catch {}
@@ -491,4 +493,3 @@ export default function FiscalProfileA() {
     </div>
   );
 }
-
