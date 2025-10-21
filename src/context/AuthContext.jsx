@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { validateStatus, initProfile } from '../services/FiscalProfileService';
+import { initProfile } from '../services/FiscalProfileService';
+import api from '../api/axiosConfig';
 
 const AuthContext = createContext(null);
 
@@ -53,39 +54,48 @@ export function AuthProvider({ children }) {
     window.location.assign('/');
   };
 
-  const jwt = token;
-
+  // Validar sesión solo si existe JWT en localStorage
   useEffect(() => {
-    if (jwt && !profileChecked) {
-      checkFiscalProfile();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jwt]);
-
-  async function checkFiscalProfile() {
-    try {
-      setIsValidatingProfile(true);
-      const data = await validateStatus(jwt);
-
-      if (data.status === 'none') {
-        await initProfile(jwt);
-        navigate('/perfil-fiscal/A');
-      } else if (data.status === 'draft') {
-        const section = data.completedSection || 'A';
-        navigate(`/perfil-fiscal/${section}`);
-      } else if (data.status === 'complete') {
-        navigate('/dashboard');
-      } else {
-        // Estado desconocido: ir al dashboard por defecto
-        navigate('/dashboard');
+    const validateSession = async () => {
+      const lsToken = (() => { try { return localStorage.getItem('jwt'); } catch { return null; } })();
+      if (!lsToken) {
+        console.log('Sin sesión activa, no se valida perfil fiscal');
+        setProfileChecked(true);
+        return;
       }
-    } catch (err) {
-      console.error('Error al validar perfil fiscal:', err);
-    } finally {
-      setIsValidatingProfile(false);
-      setProfileChecked(true); // evita reejecuciones
-    }
-  }
+
+      try {
+        setIsValidatingProfile(true);
+        const response = await api.get('/api/fiscal-profile/validate-status');
+        const data = response?.data || {};
+
+        if (data.status === 'none') {
+          await initProfile();
+          navigate('/perfil-fiscal/A');
+        } else if (data.status === 'draft') {
+          const section = data.completedSection || 'A';
+          navigate(`/perfil-fiscal/${section}`);
+        } else if (data.status === 'complete') {
+          navigate('/dashboard');
+        } else {
+          navigate('/dashboard');
+        }
+      } catch (err) {
+        if (err?.response?.status === 401) {
+          console.warn('Token inválido, cerrando sesión...');
+          logout();
+        } else {
+          console.error('Error al validar sesión:', err);
+        }
+      } finally {
+        setIsValidatingProfile(false);
+        setProfileChecked(true);
+      }
+    };
+
+    validateSession();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const value = useMemo(
     () => ({ token, user, setToken, setUser, logout, isValidatingProfile, profileChecked }),
