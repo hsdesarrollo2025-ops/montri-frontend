@@ -1,19 +1,22 @@
 import axios from 'axios';
 
-// Resolve base URL from Vite env or fallback
+// Base URL from Vite env with sane local fallback
 const API_URL = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL)
   ? import.meta.env.VITE_API_URL
-  : (process.env.VITE_API_URL || 'https://montri-backend.onrender.com');
+  : (process.env.VITE_API_URL || 'http://localhost:1337');
 
-export const api = axios.create({
+const api = axios.create({
   baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
-// Lazy import to avoid circular deps during tests/build
+// Interceptor: agrega el token JWT automáticamente si existe
 api.interceptors.request.use(
   (config) => {
     try {
-      const token = localStorage.getItem('token') || localStorage.getItem('jwt');
+      const token = localStorage.getItem('jwt');
       if (token) {
         config.headers = config.headers || {};
         config.headers.Authorization = `Bearer ${token}`;
@@ -24,5 +27,5 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+export { api };
 export default api;
-
