@@ -1,3 +1,5 @@
+import api from '../api/axiosConfig';
+
 const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL)
   ? import.meta.env.VITE_API_URL
   : (process.env.VITE_API_URL || 'http://localhost:1337');
@@ -5,73 +7,32 @@ const BASE = `${API_BASE}/api/fiscal-profile`;
 const TAX_BASE = `${API_BASE}/api`;
 
 // Generic update of a fiscal profile section using JWT-bound user context
-export async function updateSection(section, data, jwt, opts = {}) {
+export async function updateSection(section, data, _jwt, opts = {}) {
   try {
     const draft = Boolean(opts && opts.draft);
     const url = `${BASE}/section/${section}${draft ? '?draft=true' : ''}`;
-    const res = await fetch(url, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${jwt}`,
-      },
-      body: JSON.stringify(draft ? { ...(data || {}), draft: true } : (data || {})),
-    });
-    const json = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      const err = new Error(json?.error?.message || json?.message || 'Error al guardar la sección');
-      err.status = res.status;
-      err.payload = json;
-      throw err;
-    }
-    return json;
+    const res = await api.put(url, draft ? { ...(data || {}), draft: true } : (data || {}));
+    return res.data;
   } catch (error) {
     console.error('Error en updateSection:', error);
     throw error;
   }
 }
 
-export async function validateStatus(jwt) {
+export async function validateStatus() {
   try {
-    const res = await fetch(`${BASE}/validate-status`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${jwt}`,
-      },
-    });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      const err = new Error(data?.error?.message || 'Error al validar perfil fiscal');
-      err.status = res.status;
-      err.payload = data;
-      throw err;
-    }
-    return await res.json();
+    const res = await api.get(`${BASE}/validate-status`);
+    return res.data;
   } catch (error) {
     console.error('Error en validateStatus:', error);
     throw error;
   }
 }
 
-export async function initProfile(jwt) {
+export async function initProfile() {
   try {
-    const res = await fetch(`${BASE}/init`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${jwt}`,
-      },
-      body: JSON.stringify({}),
-    });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      const err = new Error(data?.error?.message || 'Error al iniciar perfil fiscal');
-      err.status = res.status;
-      err.payload = data;
-      throw err;
-    }
-    return await res.json();
+    const res = await api.post(`${BASE}/init`, {});
+    return res.data;
   } catch (error) {
     console.error('Error en initProfile:', error);
     throw error;
@@ -87,27 +48,8 @@ export async function updateSectionA(jwt, data) {
       postalCode: Number(data.postalCode),
     };
 
-    const response = await fetch(
-      `${BASE}/section/A`,
-      {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${jwt}`,
-        },
-        body: JSON.stringify(payload),
-      }
-    );
-
-    const dataRes = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      const err = new Error(dataRes?.error?.message || dataRes?.message || 'Error al guardar los datos');
-      err.status = response.status;
-      err.payload = dataRes;
-      throw err;
-    }
-
-    return dataRes;
+    const response = await api.put(`${BASE}/section/A`, payload);
+    return response.data;
   } catch (err) {
     console.error('Error en updateSectionA:', err);
     throw err;
@@ -116,20 +58,8 @@ export async function updateSectionA(jwt, data) {
 
 export async function getTaxCategories() {
   try {
-    const res = await fetch(`${TAX_BASE}/tax-categories`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      const err = new Error(data?.error?.message || data?.message || 'Error al obtener categorías');
-      err.status = res.status;
-      err.payload = data;
-      throw err;
-    }
-    return data;
+    const res = await api.get(`${TAX_BASE}/tax-categories`);
+    return res.data;
   } catch (error) {
     console.error('Error en getTaxCategories:', error);
     throw error;
@@ -138,22 +68,8 @@ export async function getTaxCategories() {
 
 export async function updateSectionB(jwt, payload) {
   try {
-    const res = await fetch(`${BASE}/section/B`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${jwt}`,
-      },
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      const err = new Error(data?.error?.message || data?.message || 'Error al guardar la Sección B');
-      err.status = res.status;
-      err.payload = data;
-      throw err;
-    }
-    return data;
+    const res = await api.put(`${BASE}/section/B`, payload);
+    return res.data;
   } catch (error) {
     console.error('Error en updateSectionB:', error);
     throw error;
@@ -163,53 +79,22 @@ export async function updateSectionB(jwt, payload) {
 // Get fiscal profile for the currently authenticated user (by JWT)
 export async function getProfileByUser(jwt, fallbackUserId) {
   try {
-    const res = await fetch(`${BASE}/me`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${jwt}`,
-      },
-    });
+    const res = await api.get(`${BASE}/me`);
     if (res.status === 404) {
-      // Fallback to legacy endpoint by userId if provided
       if (fallbackUserId) {
         try {
-          const resLegacy = await fetch(`${BASE}/${fallbackUserId}`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${jwt}`,
-            },
-          });
-          if (resLegacy.ok) {
-            return await resLegacy.json().catch(() => ({}));
+          const resLegacy = await api.get(`${BASE}/${fallbackUserId}`);
+          if (resLegacy.status === 200) {
+            return resLegacy.data;
           }
         } catch (e) {
-          console.error('Fallback a /:userId falló:', e);
+          console.error('Fallback a /:userId fall�:', e);
         }
       }
-      try {
-        await fetch(`${BASE}/init`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${jwt}`,
-          },
-          body: JSON.stringify({}),
-        });
-      } catch (e) {
-        console.error('Error al inicializar perfil fiscal tras 404:', e);
-      }
+      try { await api.post(`${BASE}/init`, {}); } catch (e) { console.error('Error al inicializar perfil fiscal tras 404:', e); }
       return null;
     }
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      const err = new Error(data?.error?.message || data?.message || 'Error al obtener perfil fiscal');
-      err.status = res.status;
-      err.payload = data;
-      throw err;
-    }
-    return data;
+    return res.data;
   } catch (error) {
     console.error('Error en getProfileByUser:', error);
     return null;
@@ -220,21 +105,8 @@ export async function getProfileByUser(jwt, fallbackUserId) {
 export async function getFiscalProfile(jwt, userId) {
   if (!userId) return null;
   try {
-    const res = await fetch(`${BASE}/${userId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${jwt}`,
-      },
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      const err = new Error(data?.error?.message || data?.message || 'Error al obtener perfil fiscal');
-      err.status = res.status;
-      err.payload = data;
-      throw err;
-    }
-    return data;
+    const res = await api.get(`${BASE}/${userId}`);
+    return res.data;
   } catch (error) {
     console.error('Error en getFiscalProfile:', error);
     return null;

@@ -1,4 +1,8 @@
-const API_URL = import.meta.env.VITE_API_URL;
+import api from '../api/axiosConfig';
+
+const API_URL = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL)
+  ? import.meta.env.VITE_API_URL
+  : (process.env.VITE_API_URL || 'https://montri-backend.onrender.com');
 
 export async function registerUser(data) {
   try {
@@ -9,22 +13,12 @@ export async function registerUser(data) {
       firstName: data.firstName,
       lastName: data.lastName,
     };
-    const response = await fetch(`${API_URL}/api/auth/local/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      const message = errorData?.error?.message || 'Error al registrar usuario';
-      const err = new Error(message);
-      err.status = response.status;
-      err.payload = errorData;
-      throw err;
+    const res = await api.post(`${API_URL}/api/auth/local/register`, payload, { baseURL: '' });
+    const out = res.data || {};
+    if (out.jwt) {
+      try { localStorage.setItem('jwt', out.jwt); localStorage.setItem('token', out.jwt); localStorage.setItem('user', JSON.stringify(out.user)); } catch {}
     }
-
-    return await response.json();
+    return out;
   } catch (error) {
     console.error('Error en registerUser:', error);
     throw error;
@@ -33,30 +27,15 @@ export async function registerUser(data) {
 
 export async function loginUser(data) {
   try {
-    const payload = {
-      identifier: data.email,
-      password: data.password,
-    };
-
-    const response = await fetch(`${API_URL}/api/auth/local/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      const message = errorData?.error?.message || 'Error al iniciar sesión';
-      const err = new Error(message);
-      err.status = response.status;
-      err.payload = errorData;
-      throw err;
+    const payload = { identifier: data.email, password: data.password };
+    const res = await api.post(`${API_URL}/api/auth/local`, payload, { baseURL: '' });
+    const out = res.data || {};
+    if (out.jwt) {
+      try { localStorage.setItem('jwt', out.jwt); localStorage.setItem('token', out.jwt); localStorage.setItem('user', JSON.stringify(out.user)); } catch {}
     }
-
-    return await response.json();
+    return out;
   } catch (error) {
     console.error('Error en loginUser:', error);
-    // Normalizamos un posible error de red
     if (error instanceof TypeError && !('status' in error)) {
       const err = new Error('No se pudo conectar al servidor');
       err.code = 'NETWORK_ERROR';
@@ -65,3 +44,11 @@ export async function loginUser(data) {
     throw error;
   }
 }
+
+export const AuthService = {
+  async login(email, password) { return loginUser({ email, password }); },
+  async register(username, email, password) { return registerUser({ email, password, username }); },
+  logout() { try { localStorage.removeItem('jwt'); localStorage.removeItem('token'); localStorage.removeItem('user'); } catch {} },
+  getToken() { try { return localStorage.getItem('token') || localStorage.getItem('jwt'); } catch { return null; } },
+  getUser() { try { const u = localStorage.getItem('user'); return u ? JSON.parse(u) : null; } catch { return null; } },
+};
