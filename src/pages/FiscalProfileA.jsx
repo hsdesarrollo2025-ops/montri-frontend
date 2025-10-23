@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import { updateSectionA, getFiscalProfile } from '../services/FiscalProfileService.js';
+import { updateSectionA, getProfileByUser } from '../services/FiscalProfileService.js';
 import FiscalProgress from '../components/FiscalProgress.jsx';
 
 const PROVINCIAS_AR = [
@@ -63,6 +63,7 @@ export default function FiscalProfileA() {
   const [draftStatus, setDraftStatus] = useState('');
   const [toastMsg, setToastMsg] = useState('');
   const [toastType, setToastType] = useState('success');
+  const [profileProgress, setProfileProgress] = useState(undefined);
   const saveTimerRef = useRef(null);
 
   const draftKey = useMemo(() => `fiscal_profile_a_draft:${user?.id || user?.email || 'anon'}`, [user?.id, user?.email]);
@@ -88,30 +89,41 @@ export default function FiscalProfileA() {
 
     // Intentar traer datos del backend si existen (tienen prioridad)
     (async () => {
-      if (!user?.id || !token) return;
-      const data = await getFiscalProfile(token, user.id);
+      if (!token) return;
+      const data = await getProfileByUser(token, user?.id);
       if (!data) return;
       try {
-        const a = data?.sectionA || data?.a || {};
-        const next = { ...form };
-        const map = {
-          firstName: a.firstName,
-          lastName: a.lastName,
-          documentType: a.documentType,
-          documentNumber: a.documentNumber,
-          cuit: a.cuit,
-          addressStreet: a.addressStreet,
-          addressNumber: a.addressNumber,
-          city: a.city,
-          province: a.province,
-          postalCode: a.postalCode,
-          email: a.email,
-          phone: a.phone,
-        };
-        Object.keys(map).forEach((k) => {
-          if (map[k] !== undefined && map[k] !== null && map[k] !== '') next[k] = String(map[k]);
+        const profile = data?.profile ?? data;
+        const a = profile?.sectionA ?? profile?.a ?? {};
+        const filled = {};
+        const fields = [
+          'firstName',
+          'lastName',
+          'documentType',
+          'documentNumber',
+          'cuit',
+          'addressStreet',
+          'addressNumber',
+          'city',
+          'province',
+          'postalCode',
+          'email',
+          'phone',
+        ];
+        fields.forEach((k) => {
+          const v = (a && a[k] !== undefined ? a[k] : profile?.[k]);
+          if (v !== undefined && v !== null && v !== '') filled[k] = String(v);
         });
-        setForm((prev) => ({ ...prev, ...next }));
+        setForm((prev) => ({ ...prev, ...filled }));
+
+        // Progreso si viene desde backend
+        const p = profile?.progress;
+        if (typeof p === 'number') {
+          setProfileProgress(p);
+        } else if (profile?.completedSection) {
+          const cs = String(profile.completedSection).toUpperCase();
+          setProfileProgress(cs === 'A' ? 33 : cs === 'B' ? 66 : 100);
+        }
       } catch {}
     })();
   }, [initial, draftKey, token, user?.id]);
@@ -290,7 +302,7 @@ export default function FiscalProfileA() {
           <h1 className="text-2xl font-bold text-gray-900">Completá tus datos personales para comenzar tu perfil fiscal</h1>
           <p className="text-gray-600 mt-1">Esta información se utilizará para definir tu situación fiscal en Montri.</p>
         </div>
-        <FiscalProgress current="A" />
+        <FiscalProgress current="A" progress={profileProgress} />
 
         <form onSubmit={onSubmit} className="bg-white rounded-2xl shadow-md p-6 space-y-5" noValidate>
           {serverError ? (
@@ -531,3 +543,4 @@ export default function FiscalProfileA() {
     </div>
   );
 }
+
