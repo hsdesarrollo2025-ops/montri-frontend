@@ -295,6 +295,36 @@ export default function FiscalProfileA() {
     }
   }
 
+  // Guarda el progreso actual de la sección A y vuelve al dashboard
+  async function handleExitAndSave() {
+    try {
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+      setSaving(true);
+      await updateSectionA(token, {
+        firstName: form.firstName?.trim?.() || '',
+        lastName: form.lastName?.trim?.() || '',
+        documentType: form.documentType,
+        documentNumber: (form.documentNumber || '').toString().trim(),
+        cuit: form.cuit,
+        addressStreet: form.addressStreet?.trim?.() || '',
+        addressNumber: (form.addressNumber || '').toString().trim(),
+        city: form.city?.trim?.() || '',
+        province: form.province || '',
+        postalCode: (form.postalCode || '').toString().trim(),
+        email: form.email?.trim?.() || '',
+        phone: form.phone?.trim?.() || '',
+      });
+      navigate('/dashboard');
+    } catch (err) {
+      console.error('Error al guardar antes de salir:', err);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="min-h-[calc(100vh-120px)] bg-[#F8FAFF] px-4 py-10">
       <div className="max-w-3xl mx-auto">
@@ -506,19 +536,20 @@ export default function FiscalProfileA() {
 
           <div className="flex justify-end items-center space-x-3 mt-6">
             <button
+              type="button"
+               className="text-gray-700 border border-gray-300 hover:bg-gray-100 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ml-auto"
+              onClick={() => navigate('/dashboard')}
+            >
+              Salir y continuar después
+            </button>
+            <button
               type="submit"
               className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg shadow-sm transition-colors duration-200"
               disabled={saving}
             >
               {saving ? 'Guardando información...' : 'Guardar y continuar'}
             </button>
-            <button
-              type="button"
-              className="text-gray-600 hover:text-gray-800 text-sm font-medium"
-              onClick={() => navigate('/dashboard')}
-            >
-              Salir y continuar después
-            </button>
+
           </div>
         </form>
 
