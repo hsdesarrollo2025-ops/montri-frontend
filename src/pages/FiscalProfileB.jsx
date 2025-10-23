@@ -385,28 +385,34 @@ export default function FiscalProfileB() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-2">
+          <div className="flex items-center justify-between pt-6 mt-6 pb-6">
+            {/* Botón izquierdo */}
             <button
               type="button"
-              className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+              className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-medium transition-colors duration-200"
               onClick={() => navigate('/perfil-fiscal/A')}
             >
               Volver
             </button>
-            <button
-              type="button"
-              className="text-gray-700 border border-gray-300 hover:bg-gray-100 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ml-auto"
-              onClick={() => { try { localStorage.setItem(draftKey, JSON.stringify(form)); } catch {}; navigate('/dashboard'); }}
-            >
-              Salir y continuar después
-            </button>
-            <button
-              type="submit"
-              className="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-lg shadow-sm text-sm transition-colors duration-200 ml-3"
-              disabled={saving}
-            >
-              {saving ? 'Guardando información...' : 'Guardar y continuar'}
-            </button>
+
+            {/* Botones derechos */}
+            <div className="flex items-center space-x-3">
+              <button
+                type="button"
+                className="text-gray-700 border border-gray-300 hover:bg-gray-100 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
+                onClick={() => navigate('/dashboard')}
+              >
+                Salir y continuar después
+              </button>
+
+              <button
+                type="submit"
+                className="bg-green-700 hover:bg-green-800 text-white font-semibold py-2 px-4 rounded-lg shadow-sm transition-colors duration-200 text-sm"
+                disabled={saving}
+              >
+                {saving ? 'Guardando información...' : 'Guardar y continuar'}
+              </button>
+            </div>
           </div>
 
           {saving && (
