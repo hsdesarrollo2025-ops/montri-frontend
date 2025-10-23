@@ -12,8 +12,7 @@ export default function FiscalProgress({ current, progress }) {
       <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
         <div className="h-2 bg-green-500 transition-all" style={{ width: `${value}%` }} aria-valuemin={0} aria-valuemax={100} aria-valuenow={value} role="progressbar" />
       </div>
-      <p className="text-sm text-gray-600 text-center mt-2">Sección {current} de 3 — {value}% completado</p>
+      <p className="text-sm text-gray-600 text-center mt-2">Sección {step} de 3 — {value}% completado</p>
     </div>
   );
 }
-

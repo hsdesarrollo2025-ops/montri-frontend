@@ -504,17 +504,17 @@ export default function FiscalProfileA() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-2">
+          <div className="flex justify-end items-center space-x-3 mt-6">
             <button
               type="submit"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg shadow-sm transition-colors duration-200"
               disabled={saving}
             >
               {saving ? 'Guardando información...' : 'Guardar y continuar'}
             </button>
             <button
               type="button"
-              className="text-gray-500 hover:text-gray-700"
+              className="text-gray-600 hover:text-gray-800 text-sm font-medium"
               onClick={() => navigate('/dashboard')}
             >
               Salir y continuar después
@@ -543,4 +543,6 @@ export default function FiscalProfileA() {
     </div>
   );
 }
+
+
 
