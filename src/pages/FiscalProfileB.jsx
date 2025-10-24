@@ -1,7 +1,7 @@
 ﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import { getTaxCategories, updateSectionB, getFiscalProfile } from '../services/FiscalProfileService.js';
+import { getTaxCategories, updateSectionB, getProfileByUser } from '../services/FiscalProfileService.js';
 import FiscalProgress from '../components/FiscalProgress.jsx';
 
 const PROVINCIAS_AR = [
@@ -92,9 +92,10 @@ export default function FiscalProfileB() {
       }
     } catch {}
     (async () => {
-      if (!user?.id || !token) return;
-      const data = await getFiscalProfile(token, user.id);
-      const b = data?.sectionB || data?.b || {};
+      if (!token) return;
+      const data = await getProfileByUser(token, user?.id);
+      const profile = data?.profile ?? data;
+      const b = profile?.sectionB || profile?.b || {};
       if (b && typeof b === 'object') {
         setForm((f) => ({
           ...f,
@@ -169,6 +170,7 @@ export default function FiscalProfileB() {
       }
     }
 
+    if (!form.startDate) e.startDate = 'Ingresá la fecha de inicio de actividad.';
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -189,6 +191,8 @@ export default function FiscalProfileB() {
         customerType: form.customerType,
         monthlyOperations: form.monthlyOperations ? Number(form.monthlyOperations) : null,
         hasEmployees: !!form.hasEmployees,
+        autosave: false,
+        completedSection: 'B',
       });
       try { localStorage.removeItem(draftKey); } catch {}
       navigate('/perfil-fiscal/C');
@@ -210,6 +214,36 @@ export default function FiscalProfileB() {
       } else {
         setServerError('Ocurrió un error al guardar la información. Intentalo nuevamente.');
       }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // Guarda el progreso actual de la sección B y vuelve al dashboard
+  async function handleExitAndSave() {
+    try {
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+      setSaving(true);
+      await updateSectionB(token, {
+        regimen: form.regimen,
+        startDate: form.startDate || null,
+        category: form.category || null,
+        annualRevenue: form.annualRevenue ? Number(form.annualRevenue) : null,
+        activity: form.activity || '',
+        province: form.province,
+        customerType: form.customerType,
+        monthlyOperations: form.monthlyOperations ? Number(form.monthlyOperations) : null,
+        hasEmployees: !!form.hasEmployees,
+        autosave: true,
+        status: 'draft',
+      });
+      navigate('/dashboard');
+    } catch (err) {
+      console.error('Error al guardar antes de salir (Sección B):', err);
+      navigate('/dashboard');
     } finally {
       setSaving(false);
     }
@@ -400,7 +434,7 @@ export default function FiscalProfileB() {
               <button
                 type="button"
                 className="text-gray-700 border border-gray-300 hover:bg-gray-100 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
-                onClick={() => navigate('/dashboard')}
+                onClick={handleExitAndSave}
               >
                 Salir y continuar después
               </button>
