@@ -71,8 +71,20 @@ export function AuthProvider({ children }) {
         await initProfile(jwt);
         navigate('/perfil-fiscal/A');
       } else if (data.status === 'draft') {
-        const section = data.completedSection || 'A';
-        navigate(`/perfil-fiscal/${section}`);
+        const cs = data?.completedSection;
+        // Redirigir a la próxima sección pendiente según completedSection
+        if (cs === null || cs === undefined || cs === 'none') {
+          navigate('/perfil-fiscal/A');
+        } else if (cs === 'A') {
+          navigate('/perfil-fiscal/B');
+        } else if (cs === 'B') {
+          navigate('/perfil-fiscal/C');
+        } else if (cs === 'C' || cs === 'complete') {
+          navigate('/dashboard');
+        } else {
+          // Valor desconocido: comenzar desde A
+          navigate('/perfil-fiscal/A');
+        }
       } else if (data.status === 'complete') {
         navigate('/dashboard');
       } else {
@@ -81,6 +93,8 @@ export function AuthProvider({ children }) {
       }
     } catch (err) {
       console.error('Error al validar perfil fiscal:', err);
+      // En caso de error o token inválido, enviar al login
+      navigate('/login', { replace: true });
     } finally {
       setIsValidatingProfile(false);
       setProfileChecked(true); // evita reejecuciones
