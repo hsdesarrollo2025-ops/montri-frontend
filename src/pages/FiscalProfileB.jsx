@@ -68,6 +68,28 @@ export default function FiscalProfileB() {
           const data = await getTaxCategories();
           const list = Array.isArray(data?.categories) ? data.categories : Array.isArray(data) ? data : [];
           setCategories(list);
+          const normalized = Array.isArray(list)
+            ? list.map((item) => {
+                const code = item?.attributes?.code ?? item?.code ?? item?.id ?? item?.name;
+                const grossIncomeLimit =
+                  item?.attributes?.grossIncomeLimit ??
+                  item?.grossIncomeLimit ??
+                  item?.limit ??
+                  item?.limitAnnual ??
+                  item?.maxAnnual ??
+                  item?.annualMax ??
+                  item?.annualLimit ?? null;
+                return {
+                  id: item?.id ?? code,
+                  code: code != null ? String(code) : '',
+                  grossIncomeLimit: grossIncomeLimit != null ? Number(grossIncomeLimit) : null,
+                };
+              })
+            : [];
+          if (normalized.length) {
+            setCategories(normalized);
+            try { console.log('Categorías (normalizadas):', normalized); } catch {}
+          }
         } catch (e) {
           console.error('No se pudieron cargar categorías:', e);
         } finally {
@@ -308,10 +330,10 @@ export default function FiscalProfileB() {
                   <option value="">Seleccioná una categoría</option>
                   {categories.map((c) => {
                     const code = c?.code || c?.id || c?.name;
-                    const limit = c?.limit ?? c?.limitAnnual ?? c?.maxAnnual ?? c?.annualMax ?? c?.annualLimit;
-                    const label = code ? `Categoría ${code} – hasta ${limit ? fmtARS.format(Number(limit)) : 'N/A'} anual` : String(c?.name || 'Categoría');
+                    const limit = c?.grossIncomeLimit ?? c?.limit ?? c?.limitAnnual ?? c?.maxAnnual ?? c?.annualMax ?? c?.annualLimit;
+                    const label = code ? `Categoría ${code} (hasta ${limit ? fmtARS.format(Number(limit)) : 'N/A'} de ingresos)` : String(c?.name || 'Categoría');
                     return (
-                      <option key={String(code)} value={String(code)}>{label}</option>
+                      <option key={String(c?.id ?? code)} value={String(code)}>{label}</option>
                     );
                   })}
                 </select>
