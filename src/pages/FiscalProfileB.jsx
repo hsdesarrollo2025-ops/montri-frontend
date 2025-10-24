@@ -68,6 +68,16 @@ export default function FiscalProfileB() {
   const [draftStatus, setDraftStatus] = useState('');
   const saveTimerRef = useRef(null);
 
+  const REQUIRED_FIELDS = [
+    'regimen',
+    'startDate',
+    'category',
+    'annualRevenue',
+    'activity',
+    'province',
+    'customerType',
+  ];
+
   const fmtARS = useMemo(() => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }), []);
 
   useEffect(() => {
@@ -217,10 +227,47 @@ export default function FiscalProfileB() {
     return Object.keys(e).length === 0;
   }
 
+  // Versión mejorada de validación obligatoria y coherente
+  function validarMejorado() {
+    const e = {};
+    const rev = Number(form.annualRevenue);
+
+    if (!form.regimen) e.regimen = 'Seleccioná un régimen.';
+
+    if (!form.startDate) e.startDate = 'Ingresá la fecha de inicio de actividad.';
+    else {
+      const today = new Date();
+      const d = new Date(form.startDate + 'T00:00:00');
+      if (d > today) e.startDate = 'La fecha no puede ser futura.';
+    }
+
+    if (form.regimen === 'Monotributista') {
+      if (!form.category) e.category = 'Seleccioná una categoría.';
+      else {
+        const cat = categories.find((c) => c.code === form.category);
+        if (cat && rev > Number(cat.grossIncomeLimit)) {
+          e.annualRevenue = `La facturación supera el tope de la categoría (${fmtARS.format(Number(cat.grossIncomeLimit))}).`;
+        }
+      }
+    }
+
+    if (!rev || rev <= 0) e.annualRevenue = 'Ingresá una facturación mayor a 0.';
+
+    if (!form.activity?.trim()) e.activity = 'Ingresá tu actividad principal.';
+
+    if (!form.province) e.province = 'Seleccioná una provincia.';
+    else if (!provinciasSet.has(form.province)) e.province = 'Seleccioná una provincia válida.';
+
+    if (!form.customerType) e.customerType = 'Seleccioná un tipo de cliente.';
+
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  }
+
   async function onSubmit(e) {
     e.preventDefault();
     setServerError('');
-    if (!validar()) return;
+    if (!validarMejorado()) return;
     try {
       setSaving(true);
       await updateSectionB(token, {
@@ -432,6 +479,7 @@ export default function FiscalProfileB() {
                   </label>
                 ))}
               </div>
+              {errors.customerType && <p className="mt-1 text-sm text-red-600">{errors.customerType}</p>}
             </div>
           </div>
 
