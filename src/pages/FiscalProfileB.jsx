@@ -67,15 +67,18 @@ export default function FiscalProfileB() {
       try {
         setLoadingCategories(true);
         const response = await getTaxCategories();
-        // Estructura real: { data: [ { id, attributes: { code, grossIncomeLimit, surfaceLimit } } ] }
-        const normalized = Array.isArray(response?.data?.data)
-          ? response.data.data.map((item) => ({
-              id: item.id,
-              code: item.attributes?.code ?? '',
-              grossIncomeLimit: item.attributes?.grossIncomeLimit ?? null,
-              surfaceLimit: item.attributes?.surfaceLimit ?? '',
-            }))
-          : [];
+        // Aceptar distintas formas: {data:[...]}, {data:{data:[...]}}, o arreglo plano
+        let list = [];
+        if (Array.isArray(response?.data?.data)) list = response.data.data;
+        else if (Array.isArray(response?.data)) list = response.data;
+        else if (Array.isArray(response)) list = response;
+
+        const normalized = list.map((item) => ({
+          id: item?.id ?? item?.attributes?.id ?? item?.code ?? item?.name ?? String(Math.random()),
+          code: item?.attributes?.code ?? item?.code ?? '',
+          grossIncomeLimit: item?.attributes?.grossIncomeLimit ?? item?.grossIncomeLimit ?? null,
+          surfaceLimit: item?.attributes?.surfaceLimit ?? item?.surfaceLimit ?? '',
+        }));
         setCategories(normalized);
       } catch (error) {
         console.error('Error al cargar categorías:', error);
