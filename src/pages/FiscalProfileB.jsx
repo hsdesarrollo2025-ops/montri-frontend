@@ -31,6 +31,16 @@ const PROVINCIAS_AR = [
   'Tucumán',
 ];
 
+// Formateador reutilizable para inputs de moneda ARS
+const formatCurrencyInput = (value) => {
+  const num = String(value || '').replace(/[^\d]/g, '');
+  if (!num) return '';
+  return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 })
+    .format(Number(num))
+    .replace('ARS', '')
+    .trim();
+};
+
 export default function FiscalProfileB() {
   const { user, token } = useAuth();
   const navigate = useNavigate();
@@ -147,7 +157,26 @@ export default function FiscalProfileB() {
     const { name, type } = e.target;
     let value = type === 'checkbox' ? e.target.checked : e.target.value;
     if (name === 'annualRevenue') {
-      value = value.replace(/[^0-9.]/g, '');
+      const clean = e.target.value.replace(/[^\d]/g, '');
+      const num = Number(clean);
+      const formatted = formatCurrencyInput(clean);
+
+      setForm((f) => ({ ...f, [name]: num }));
+      // Actualizar visualmente el input sin perder el caret en la mayoría de casos
+      e.target.value = formatted;
+
+      if (form.regimen === 'Monotributista' && form.category) {
+        const cat = categories.find((c) => c.code === form.category);
+        if (cat && typeof cat.grossIncomeLimit === 'number' && num > cat.grossIncomeLimit) {
+          setErrors((prev) => ({
+            ...prev,
+            annualRevenue: `La facturación supera el tope de la categoría (${fmtARS.format(cat.grossIncomeLimit)}).`,
+          }));
+        } else {
+          setErrors((prev) => ({ ...prev, annualRevenue: '' }));
+        }
+      }
+      return;
     }
     if (name === 'regimen') {
       setForm((f) => ({ ...f, regimen: value, category: '' }));
@@ -177,10 +206,9 @@ export default function FiscalProfileB() {
 
     if (form.regimen === 'Monotributista') {
       if (!form.category) e.category = 'Seleccioná una categoría.';
-      const cat = categories.find((c) => c?.code === form.category || c?.id === form.category || c?.name === form.category);
-      const limit = cat?.limit ?? cat?.limitAnnual ?? cat?.maxAnnual ?? cat?.annualMax ?? cat?.annualLimit;
-      if (limit && rev > Number(limit)) {
-        e.annualRevenue = `La facturación supera el tope de la categoría (${fmtARS.format(Number(limit))}).`;
+      const cat = categories.find((c) => c.code === form.category);
+      if (cat && form.annualRevenue && Number(form.annualRevenue) > Number(cat.grossIncomeLimit)) {
+        e.annualRevenue = `La facturación supera el tope de la categoría (${fmtARS.format(Number(cat.grossIncomeLimit))}).`;
       }
     }
 
@@ -342,14 +370,16 @@ export default function FiscalProfileB() {
               <input
                 id="annualRevenue"
                 name="annualRevenue"
-                type="number"
-                inputMode="decimal"
-                min="0"
-                step="1"
-                value={form.annualRevenue}
+                inputMode="numeric"
+                placeholder="Ej: $ 1.500.000"
                 onChange={onChange}
-                placeholder="Ej: 1500000"
+                defaultValue={form.annualRevenue ? fmtARS.format(form.annualRevenue) : ''}
                 className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                onBlur={(e) => {
+                  const clean = e.target.value.replace(/[^\d]/g, '');
+                  const num = Number(clean);
+                  e.target.value = num ? fmtARS.format(num) : '';
+                }}
               />
               {errors.annualRevenue && <p className="mt-1 text-sm text-red-600">{errors.annualRevenue}</p>}
             </div>
