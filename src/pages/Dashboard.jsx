@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { DollarSign, FileText, Scale, Receipt, Bell, CalendarDays } from 'lucide-react';
 import { getDashboardSummary, getDashboardAlerts } from '../services/DashboardService.js';
+import EmptyState from '../components/EmptyState.jsx';
 
 export default function Dashboard() {
   const { user, token } = useAuth();
@@ -54,12 +55,28 @@ export default function Dashboard() {
     return <p className="text-center mt-10">Cargando...</p>;
   }
 
-  if (!summary) {
+  const noData =
+    !summary ||
+    (Number(summary?.totalIngresos || 0) === 0 &&
+      Number(summary?.totalEgresos || 0) === 0 &&
+      Number(summary?.totalDeducibles || 0) === 0);
+
+  if (noData) {
     return (
-      <div className="text-center mt-10">
-        <h2>Empezá cargando tus primeros ingresos y egresos</h2>
-        <p>Podrás ver aquí tu resumen mensual una vez que registres actividad.</p>
-      </div>
+      <EmptyState
+        title="Todavía no hay actividad registrada"
+        message="Comenzá cargando tus primeros ingresos y egresos. Así vas a poder ver tu resumen mensual y alertas fiscales."
+        actions={
+          <>
+            <a href="/ingresos/nuevo" className="bg-green-500 hover:bg-green-600 text-white py-3 px-5 rounded-lg">
+              + Agregar ingreso
+            </a>
+            <a href="/egresos/nuevo" className="bg-red-500 hover:bg-red-600 text-white py-3 px-5 rounded-lg">
+              + Agregar gasto
+            </a>
+          </>
+        }
+      />
     );
   }
 
@@ -143,4 +160,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
