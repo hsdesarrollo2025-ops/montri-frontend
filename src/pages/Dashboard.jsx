@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { DollarSign, FileText, Scale, Receipt, Bell, CalendarDays } from 'lucide-react';
 import { getDashboardSummary, getDashboardAlerts } from '../services/DashboardService.js';
-import EmptyState from '../components/EmptyState.jsx';
 
 export default function Dashboard() {
   const { user, token } = useAuth();
@@ -63,26 +62,39 @@ export default function Dashboard() {
 
   if (noData) {
     return (
-      <div className="min-h-[calc(100vh-120px)] bg-[#F8FAFF] px-4 py-10">
-        <div className="max-w-5xl mx-auto">
-          <div className="mb-6 text-center">
-            <h1 className="text-2xl font-bold text-gray-900">Bienvenido a tu panel, {firstName}</h1>
-            <p className="text-gray-600 mt-1">Aquí verás un resumen de tu actividad</p>
-          </div>
-          <EmptyState
-            title="Todavía no hay actividad registrada"
-            message="Comenzá cargando tus primeros ingresos y egresos. Así vas a poder ver tu resumen mensual y alertas fiscales."
-            actions={
-              <>
-                <a href="/ingresos/nuevo" className="bg-green-500 hover:bg-green-600 text-white py-3 px-5 rounded-lg">
-                  + Agregar ingreso
-                </a>
-                <a href="/egresos/nuevo" className="bg-red-500 hover:bg-red-600 text-white py-3 px-5 rounded-lg">
-                  + Agregar gasto
-                </a>
-              </>
-            }
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-12">
+        <div className="text-center max-w-lg">
+          {/* Imagen ilustrativa */}
+          <img
+            src="/img/empty-dashboard.svg"
+            alt="Sin datos"
+            onError={(e) => {
+              e.currentTarget.outerHTML = '<div class="text-6xl mb-4 text-green-500">📊</div>';
+            }}
+            className="w-40 mx-auto mb-6 opacity-90"
           />
+
+          {/* Texto principal */}
+          <h2 className="text-2xl font-semibold text-gray-800 mb-2">Todavía no hay actividad registrada</h2>
+          <p className="text-gray-500 mb-8">
+            Comenzá cargando tus primeros ingresos y egresos. Así vas a poder ver tu resumen mensual y alertas fiscales.
+          </p>
+
+          {/* Botones de acción */}
+          <div className="flex justify-center gap-4 flex-wrap">
+            <a
+              href="/ingresos/nuevo"
+              className="bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-lg shadow-sm transition font-medium"
+            >
+              + Agregar ingreso
+            </a>
+            <a
+              href="/egresos/nuevo"
+              className="bg-red-500 hover:bg-red-600 text-white py-3 px-6 rounded-lg shadow-sm transition font-medium"
+            >
+              + Agregar gasto
+            </a>
+          </div>
         </div>
       </div>
     );
