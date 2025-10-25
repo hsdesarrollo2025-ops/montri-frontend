@@ -267,41 +267,44 @@ export default function FiscalProfileB() {
   async function onSubmit(e) {
     e.preventDefault();
     setServerError('');
+    setFormError('');
     if (!validarMejorado()) return;
     try {
       setSaving(true);
-      await updateSectionB(token, {
-        regimen: form.regimen,
+      const payload = {
+        regime: form.regimen,
         startDate: form.startDate || null,
         category: form.category || null,
         annualRevenue: form.annualRevenue ? Number(form.annualRevenue) : null,
-        activity: form.activity || '',
-        province: form.province,
-        customerType: form.customerType,
+        mainActivity: form.activity || '',
+        activityProvince: form.province,
+        clientType:
+          form.customerType === 'Consumidor final'
+            ? 'Final Consumer'
+            : form.customerType === 'Contribuyente registrado'
+            ? 'Registered Taxpayer'
+            : 'Mixed',
         monthlyOperations: form.monthlyOperations ? Number(form.monthlyOperations) : null,
         hasEmployees: !!form.hasEmployees,
         autosave: false,
         completedSection: 'B',
-      });
+      };
+      try { console.debug('Payload enviado (B):', payload); } catch {}
+      await updateSectionB(token, payload);
       try { localStorage.removeItem(draftKey); } catch {}
       navigate('/perfil-fiscal/C');
     } catch (err) {
-      const status = err?.status;
-      const payload = err?.payload;
-      if (status === 400 || status === 422) {
-        const beErrors = payload?.errors || payload?.error?.errors;
-        if (beErrors && typeof beErrors === 'object') {
-          const mapped = {};
-          Object.keys(beErrors).forEach((k) => {
-            const msg = Array.isArray(beErrors[k]) ? beErrors[k][0] : beErrors[k];
-            mapped[k] = String(msg || '').trim();
-          });
-          setErrors((prev) => ({ ...prev, ...mapped }));
-        }
-        const msg = payload?.message || payload?.error?.message;
-        if (msg) setServerError(String(msg));
+      console.error('Error al guardar sección B:', err);
+      const status = err?.response?.status ?? err?.status;
+      if (status === 422) {
+        const msgArr = err?.response?.data?.errores;
+        const joined = Array.isArray(msgArr) ? msgArr.join(' ') : '';
+        setFormError(joined || 'Algunos campos no son válidos. Revisá la información ingresada.');
+      } else if (status === 400) {
+        const msg = err?.response?.data?.error?.message || err?.payload?.error?.message || err?.payload?.message;
+        setFormError(msg || 'Los datos enviados no son válidos.');
       } else {
-        setServerError('Ocurrió un error al guardar la información. Intentalo nuevamente.');
+        setFormError('Ocurrió un error al guardar. Intentá nuevamente.');
       }
     } finally {
       setSaving(false);
@@ -316,19 +319,26 @@ export default function FiscalProfileB() {
         return;
       }
       setSaving(true);
-      await updateSectionB(token, {
-        regimen: form.regimen,
+      const payload = {
+        regime: form.regimen,
         startDate: form.startDate || null,
         category: form.category || null,
         annualRevenue: form.annualRevenue ? Number(form.annualRevenue) : null,
-        activity: form.activity || '',
-        province: form.province,
-        customerType: form.customerType,
+        mainActivity: form.activity || '',
+        activityProvince: form.province,
+        clientType:
+          form.customerType === 'Consumidor final'
+            ? 'Final Consumer'
+            : form.customerType === 'Contribuyente registrado'
+            ? 'Registered Taxpayer'
+            : 'Mixed',
         monthlyOperations: form.monthlyOperations ? Number(form.monthlyOperations) : null,
         hasEmployees: !!form.hasEmployees,
         autosave: true,
         status: 'draft',
-      });
+      };
+      try { console.debug('Payload enviado (B autosave):', payload); } catch {}
+      await updateSectionB(token, payload);
       navigate('/dashboard');
     } catch (err) {
       console.error('Error al guardar antes de salir (Sección B):', err);
@@ -542,6 +552,12 @@ export default function FiscalProfileB() {
               </button>
             </div>
           </div>
+
+          {formError && (
+            <div className="mt-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
+              {formError}
+            </div>
+          )}
 
           {saving && (
             <div className="fixed inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center z-50">
