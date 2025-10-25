@@ -64,20 +64,20 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-12">
         <div className="text-center max-w-lg">
-          {/* Imagen ilustrativa */}
+          {/* Imagen personalizada del estado vacío */}
           <img
-            src="/img/empty-dashboard.svg"
+            src="/img/montri_sin_datos.png"
             alt="Sin datos"
-            onError={(e) => {
-              e.currentTarget.outerHTML = '<div class="text-6xl mb-4 text-green-500">📊</div>';
-            }}
-            className="w-40 mx-auto mb-6 opacity-90"
+            className="w-56 mx-auto mb-6 opacity-95"
           />
 
           {/* Texto principal */}
-          <h2 className="text-2xl font-semibold text-gray-800 mb-2">Todavía no hay actividad registrada</h2>
+          <h2 className="text-2xl font-semibold text-gray-800 mb-2">
+            Todavía no hay actividad registrada
+          </h2>
           <p className="text-gray-500 mb-8">
-            Comenzá cargando tus primeros ingresos y egresos. Así vas a poder ver tu resumen mensual y alertas fiscales.
+            Comenzá cargando tus primeros ingresos y egresos. Así vas a poder ver
+            tu resumen mensual y alertas fiscales.
           </p>
 
           {/* Botones de acción */}
