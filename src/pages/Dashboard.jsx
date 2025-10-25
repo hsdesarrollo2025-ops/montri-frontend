@@ -60,45 +60,49 @@ export default function Dashboard() {
       Number(summary?.totalEgresos || 0) === 0 &&
       Number(summary?.totalDeducibles || 0) === 0);
 
-  if (noData) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-12">
-        <div className="text-center max-w-lg">
-          {/* Imagen personalizada del estado vacío */}
-          <img
-            src="/img/montri_sin_datos.png"
-            alt="Sin datos"
-            className="w-56 mx-auto mb-6 opacity-95"
-          />
+// Mejorar proporciones del estado vacío (imagen + botones visibles sin scroll)
 
-          {/* Texto principal */}
-          <h2 className="text-2xl font-semibold text-gray-800 mb-2">
-            Todavía no hay actividad registrada
-          </h2>
-          <p className="text-gray-500 mb-8">
-            Comenzá cargando tus primeros ingresos y egresos. Así vas a poder ver
-            tu resumen mensual y alertas fiscales.
-          </p>
+if (noData) {
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-6">
+      <div className="text-center flex flex-col items-center justify-center">
+        {/* Imagen centrada y ajustada */}
+        <img
+          src="/img/montri_sin_datos.png"
+          alt="Sin datos"
+          className="mx-auto mb-5 max-h-[220px] w-auto object-contain"
+        />
 
-          {/* Botones de acción */}
-          <div className="flex justify-center gap-4 flex-wrap">
-            <a
-              href="/ingresos/nuevo"
-              className="bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-lg shadow-sm transition font-medium"
-            >
-              + Agregar ingreso
-            </a>
-            <a
-              href="/egresos/nuevo"
-              className="bg-red-500 hover:bg-red-600 text-white py-3 px-6 rounded-lg shadow-sm transition font-medium"
-            >
-              + Agregar gasto
-            </a>
-          </div>
+        {/* Texto principal */}
+        <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-1">
+          Todavía no hay actividad registrada
+        </h2>
+        <p className="text-gray-500 text-sm mb-6 max-w-sm">
+          Comenzá cargando tus primeros ingresos y egresos. Así vas a poder ver
+          tu resumen mensual y alertas fiscales.
+        </p>
+
+        {/* Botones de acción */}
+        <div className="flex justify-center gap-4 flex-wrap">
+          <a
+            href="/ingresos/nuevo"
+            className="bg-green-500 hover:bg-green-600 text-white py-2 px-5 rounded-lg shadow-sm transition font-medium"
+          >
+            + Agregar ingreso
+          </a>
+          <a
+            href="/egresos/nuevo"
+            className="bg-red-500 hover:bg-red-600 text-white py-2 px-5 rounded-lg shadow-sm transition font-medium"
+          >
+            + Agregar gasto
+          </a>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
+
+
 
   return (
     <div className="min-h-[calc(100vh-120px)] bg-[#F8FAFF] px-4 py-10">
