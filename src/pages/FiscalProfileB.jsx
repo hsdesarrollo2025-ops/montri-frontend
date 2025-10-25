@@ -63,6 +63,7 @@ export default function FiscalProfileB() {
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const [serverError, setServerError] = useState('');
+  const [formError, setFormError] = useState('');
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(false);
   const [draftStatus, setDraftStatus] = useState('');
