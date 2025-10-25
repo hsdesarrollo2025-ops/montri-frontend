@@ -154,6 +154,30 @@ export async function getFiscalProfile(jwt, userId) {
   }
 }
 
+export async function updateSectionC(jwt, payload) {
+  try {
+    const res = await fetch(`${BASE}/section/C`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${jwt}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const err = new Error(data?.error?.message || data?.message || 'Error al guardar la Sección C');
+      err.status = res.status;
+      err.payload = data;
+      throw err;
+    }
+    return data;
+  } catch (error) {
+    console.error('Error en updateSectionC:', error);
+    throw error;
+  }
+}
+
 // Nuevo: obtener el perfil fiscal del usuario autenticado (por JWT)
 export async function getProfileByUser(jwt, fallbackUserId) {
   try {

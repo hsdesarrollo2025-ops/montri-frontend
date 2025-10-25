@@ -3,6 +3,8 @@ import { useAuth } from './context/AuthContext.jsx';
 import FiscalProfileLoader from './pages/FiscalProfileLoader.jsx';
 import FiscalProfileA from './pages/FiscalProfileA.jsx';
 import FiscalProfileB from './pages/FiscalProfileB.jsx';
+import FiscalProfileC from './pages/FiscalProfileC.jsx';
+import PerfilFiscalCompletado from './pages/PerfilFiscalCompletado.jsx';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Footer from './components/Footer';
@@ -23,6 +25,8 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/perfil-fiscal/A" element={<FiscalProfileA />} />
           <Route path="/perfil-fiscal/B" element={<FiscalProfileB />} />
+          <Route path="/perfil-fiscal/C" element={<FiscalProfileC />} />
+          <Route path="/perfil-fiscal/completado" element={<PerfilFiscalCompletado />} />
           <Route path="/dashboard" element={<Dashboard />} />
         </Routes>
       </main>
