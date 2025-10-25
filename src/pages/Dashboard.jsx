@@ -63,20 +63,28 @@ export default function Dashboard() {
 
   if (noData) {
     return (
-      <EmptyState
-        title="Todavía no hay actividad registrada"
-        message="Comenzá cargando tus primeros ingresos y egresos. Así vas a poder ver tu resumen mensual y alertas fiscales."
-        actions={
-          <>
-            <a href="/ingresos/nuevo" className="bg-green-500 hover:bg-green-600 text-white py-3 px-5 rounded-lg">
-              + Agregar ingreso
-            </a>
-            <a href="/egresos/nuevo" className="bg-red-500 hover:bg-red-600 text-white py-3 px-5 rounded-lg">
-              + Agregar gasto
-            </a>
-          </>
-        }
-      />
+      <div className="min-h-[calc(100vh-120px)] bg-[#F8FAFF] px-4 py-10">
+        <div className="max-w-5xl mx-auto">
+          <div className="mb-6 text-center">
+            <h1 className="text-2xl font-bold text-gray-900">Bienvenido a tu panel, {firstName}</h1>
+            <p className="text-gray-600 mt-1">Aquí verás un resumen de tu actividad</p>
+          </div>
+          <EmptyState
+            title="Todavía no hay actividad registrada"
+            message="Comenzá cargando tus primeros ingresos y egresos. Así vas a poder ver tu resumen mensual y alertas fiscales."
+            actions={
+              <>
+                <a href="/ingresos/nuevo" className="bg-green-500 hover:bg-green-600 text-white py-3 px-5 rounded-lg">
+                  + Agregar ingreso
+                </a>
+                <a href="/egresos/nuevo" className="bg-red-500 hover:bg-red-600 text-white py-3 px-5 rounded-lg">
+                  + Agregar gasto
+                </a>
+              </>
+            }
+          />
+        </div>
+      </div>
     );
   }
 
