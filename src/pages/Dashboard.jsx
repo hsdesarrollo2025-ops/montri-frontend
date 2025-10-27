@@ -1,194 +1,99 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext.jsx';
-import { DollarSign, FileText, Scale, Receipt, Bell, CalendarDays } from 'lucide-react';
-import { getDashboardSummary, getDashboardAlerts } from '../services/DashboardService.js';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { DollarSign, FileMinus, Scale } from 'lucide-react';
 
-export default function Dashboard() {
-  const { user, token } = useAuth();
-  const navigate = useNavigate();
-  const [summary, setSummary] = useState(null);
-  const [alerts, setAlerts] = useState([]);
-  const [vencimientos, setVencimientos] = useState([]);
+const Dashboard = () => {
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!token || !user) {
-      navigate('/login', { replace: true });
-    }
-  }, [token, user, navigate]);
-
-  const fmtARS = useMemo(
-    () => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }),
-    []
-  );
-
-  const firstName = (user?.firstName || user?.username || user?.email || '').split(' ')[0];
-
-  useEffect(() => {
-    if (!token) return;
-    (async () => {
+    const fetchDashboardSummary = async () => {
       try {
-        setLoading(true);
-        setError('');
-        const [s, a] = await Promise.all([
-          getDashboardSummary(token),
-          getDashboardAlerts(token),
-        ]);
-        setSummary(s || null);
-        setAlerts(Array.isArray(a?.alertas) ? a.alertas : []);
-        setVencimientos(Array.isArray(a?.vencimientos) ? a.vencimientos : []);
-      } catch (e) {
-        setError('No se pudo cargar tu resumen.');
-        setSummary(null);
-        setAlerts([]);
-        setVencimientos([]);
+        // Intenta 'jwt' y luego 'token' para compatibilidad con el login actual
+        const token = localStorage.getItem('jwt') || localStorage.getItem('token');
+        if (!token) {
+          setError('Usuario no autenticado');
+          setLoading(false);
+          return;
+        }
+
+        const response = await axios.get(
+          `${import.meta.env.VITE_API_URL}/dashboard/summary`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        // Admite estructura {data: {...}} o {...}
+        setData(response?.data?.data ?? response?.data ?? null);
+      } catch (err) {
+        console.error('Error al obtener resumen del dashboard:', err);
+        setError('Error al cargar datos del dashboard');
       } finally {
         setLoading(false);
       }
-    })();
-  }, [token]);
+    };
+
+    fetchDashboardSummary();
+  }, []);
 
   if (loading) {
-    return <p className="text-center mt-10">Cargando...</p>;
+    return (
+      <div className="flex justify-center items-center h-[70vh] text-gray-500">
+        Cargando datos del dashboard...
+      </div>
+    );
   }
 
-  const noData =
-    !summary ||
-    (Number(summary?.totalIngresos || 0) === 0 &&
-      Number(summary?.totalEgresos || 0) === 0 &&
-      Number(summary?.totalDeducibles || 0) === 0);
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-[70vh] text-red-500">
+        {error}
+      </div>
+    );
+  }
 
-  if (noData) {
+  const { ingresos, egresos, balance } = data || {};
+
   return (
-    <div className="min-h-[90vh] bg-gray-50 flex flex-col items-center justify-start pt-10 pb-32 px-4">
-      <div className="text-center flex flex-col items-center justify-start">
-        {/* Imagen controlada por tamaño fijo */}
-        <div className="flex justify-center mb-6">
-          <img
-            src="/img/montri_sin_datos.png"
-            alt="Sin datos"
-            style={{
-              width: "500px", // tamaño ajustado
-              height: "auto",
-              objectFit: "contain",
-            }}
-          />
+    <div className="min-h-[90vh] bg-gray-50 flex flex-col items-center py-10">
+      <h1 className="text-2xl font-semibold text-gray-800 mb-6">
+        Bienvenido a tu panel, Hernán
+      </h1>
+      <p className="text-gray-500 mb-10">Aquí verás un resumen de tu actividad.</p>
+
+      {/* Cards principales */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl px-6">
+        <div className="bg-white rounded-2xl p-6 shadow-sm flex flex-col items-center justify-center">
+          <DollarSign className="text-green-500 w-10 h-10 mb-2" />
+          <h2 className="text-gray-600 text-sm">Ingresos Totales (mes actual)</h2>
+          <p className="text-2xl font-semibold text-gray-800">
+            ${ingresos?.toLocaleString('es-AR') || 0}
+          </p>
         </div>
 
-        {/* Texto principal */}
-        <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-1">
-          Todavía no hay actividad registrada
-        </h2>
-        <p className="text-gray-500 text-sm mb-6 max-w-sm leading-relaxed">
-          Comenzá cargando tus primeros ingresos y egresos. Así vas a poder ver tu resumen mensual y alertas fiscales.
-        </p>
+        <div className="bg-white rounded-2xl p-6 shadow-sm flex flex-col items-center justify-center">
+          <FileMinus className="text-red-500 w-10 h-10 mb-2" />
+          <h2 className="text-gray-600 text-sm">Gastos Totales (mes actual)</h2>
+          <p className="text-2xl font-semibold text-gray-800">
+            ${egresos?.toLocaleString('es-AR') || 0}
+          </p>
+        </div>
 
-        {/* Botones */}
-        <div className="flex justify-center gap-4 flex-wrap">
-          {/* Botón ingreso */}
-          <a
-            href="/ingresos/nuevo"
-            className="bg-green-500 hover:bg-green-600 text-white py-2 px-5 rounded-lg shadow-sm transition font-medium"
-          >
-            + Agregar ingreso
-          </a>
-
-          {/* Botón egreso (legible aún deshabilitado) */}
-          <a
-            href="/egresos/nuevo"
-            className={`${
-              noData
-                ? "bg-gray-200 text-red-600 cursor-not-allowed"
-                : "bg-red-500 hover:bg-red-600 text-white"
-            } py-2 px-5 rounded-lg shadow-sm transition font-medium`}
-          >
-            + Agregar gasto
-          </a>
+        <div className="bg-white rounded-2xl p-6 shadow-sm flex flex-col items-center justify-center">
+          <Scale className="text-indigo-500 w-10 h-10 mb-2" />
+          <h2 className="text-gray-600 text-sm">Balance Neto</h2>
+          <p className={`text-2xl font-semibold ${Number(balance || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            ${balance?.toLocaleString('es-AR') || 0}
+          </p>
         </div>
       </div>
     </div>
   );
-}
+};
 
-  return (
-    <div className="min-h-[calc(100vh-120px)] bg-[#F8FAFF] px-4 py-10">
-      <div className="max-w-5xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Bienvenido a tu panel, {firstName}</h1>
-          <p className="text-gray-600 mt-1">Aquí verás un resumen de tu actividad.</p>
-        </div>
+export default Dashboard;
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
-          {/* Ingresos Totales */}
-          <div className="flex flex-col items-center bg-white rounded-2xl shadow-md p-6 hover:shadow-lg transition-all">
-            <div className="p-4 rounded-full bg-green-500 shadow-md mb-4 flex items-center justify-center">
-              <DollarSign size={28} color="white" strokeWidth={2} />
-            </div>
-            <p className="text-gray-500 text-sm">Ingresos Totales (mes actual)</p>
-            <h2 className="text-2xl font-bold text-gray-800 mt-1">{fmtARS.format(Number(summary?.totalIngresos || 0))}</h2>
-          </div>
-
-          {/* Gastos Totales */}
-          <div className="flex flex-col items-center bg-white rounded-2xl shadow-md p-6 hover:shadow-lg transition-all">
-            <div className="p-4 rounded-full bg-rose-500 shadow-md mb-4 flex items-center justify-center">
-              <FileText size={28} color="white" strokeWidth={2} />
-            </div>
-            <p className="text-gray-500 text-sm">Gastos Totales (mes actual)</p>
-            <h2 className="text-2xl font-bold text-gray-800 mt-1">{fmtARS.format(Number(summary?.totalEgresos || 0))}</h2>
-          </div>
-
-          {/* Deducciones válidas */}
-          <div className="flex flex-col items-center bg-white rounded-2xl shadow-md p-6 hover:shadow-lg transition-all">
-            <div className="p-4 rounded-full bg-blue-500 shadow-md mb-4 flex items-center justify-center">
-              <Receipt size={28} color="white" strokeWidth={2} />
-            </div>
-            <p className="text-gray-500 text-sm">Deducciones válidas (mes actual)</p>
-            <h2 className="text-2xl font-bold text-gray-800 mt-1">{fmtARS.format(Number(summary?.totalDeducibles || 0))}</h2>
-          </div>
-
-          {/* Balance Neto */}
-          <div className="flex flex-col items-center bg-white rounded-2xl shadow-md p-6 hover:shadow-lg transition-all">
-            <div className="p-4 rounded-full bg-indigo-500 shadow-md mb-4 flex items-center justify-center">
-              <Scale size={28} color="white" strokeWidth={2} />
-            </div>
-            <p className="text-gray-500 text-sm">Balance Neto (mes actual)</p>
-            <h2 className="text-2xl font-bold text-gray-800 mt-1">{fmtARS.format(Number(summary?.saldoEstimado || 0))}</h2>
-          </div>
-        </div>
-
-        {/* Alertas y vencimientos */}
-        <div className="max-w-3xl mx-auto mt-10">
-          <h2 className="text-xl font-semibold mb-3">Alertas y vencimientos</h2>
-          {alerts?.length > 0 || vencimientos?.length > 0 ? (
-            <div className="space-y-2">
-              {alerts.map((al, idx) => (
-                <div key={`a-${idx}`} className="flex items-center gap-3 bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded">
-                  <Bell size={18} className="text-yellow-600" />
-                  <p className="text-gray-800">{al?.mensaje || al}</p>
-                </div>
-              ))}
-              {vencimientos.map((v, idx) => (
-                <div key={`v-${idx}`} className="flex items-center gap-3 bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
-                  <CalendarDays size={18} className="text-blue-600" />
-                  <p className="text-gray-800">{v?.titulo} – vence el {new Date(v?.fecha).toLocaleDateString('es-AR')}</p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500">No hay alertas por el momento 🎉</p>
-          )}
-        </div>
-
-        {/* Accesos rápidos */}
-        <div className="max-w-3xl mx-auto mt-12 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-          <a href="/ingresos/nuevo" className="bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg">+ Ingreso</a>
-          <a href="/egresos/nuevo" className="bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg">+ Gasto</a>
-          <a href="/calendario" className="bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg">📅 Calendario</a>
-          <a href="/perfil-fiscal" className="bg-gray-700 hover:bg-gray-800 text-white py-3 rounded-lg">⚙️ Perfil</a>
-        </div>
-      </div>
-    </div>
-  );
-}
