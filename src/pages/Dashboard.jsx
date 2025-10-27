@@ -195,7 +195,7 @@ export default function Dashboard() {
               <div className="flex items-center gap-4 bg-white/95 backdrop-blur rounded-xl shadow-md hover:shadow-lg transition-shadow border border-slate-200 px-8 py-6 w-full min-w-[280px] sm:w-[320px] min-h-[120px]">
                 <FaBalanceScale size={28} className="text-indigo-500 shrink-0" />
                 <div className="flex flex-col items-start">
-                  <div className={`text-2xl font-semibold ${kpis.balance < 0 ? "text-rose-600" : "text-emerald-600"}`}>{money(kpis.balance)}</div>
+                  <div className={`text-2xl font-semibold ${kpis.balance < 0 ? "text-red-600" : "text-green-600"}`}>{money(kpis.balance)}</div>
                   <div className="text-sm text-gray-500">Balance Neto</div>
                 </div>
               </div>
@@ -223,13 +223,9 @@ export default function Dashboard() {
                         </div>
                       </div>
                       <div
-                        className={`text-sm font-semibold ${
-                          (m?.monto ?? m?.amount ?? 0) < 0
-                            ? "text-rose-600"
-                            : "text-emerald-600"
-                        }`}
+                        className={`text-sm font-semibold ${m?.tipo === "Egreso" ? "text-red-600" : "text-green-600"}`}
                       >
-                        {money(m?.monto ?? m?.amount ?? 0)}
+                        {m?.tipo === "Egreso" ? "-" : "+"}{money(m?.monto ?? m?.amount ?? 0)}
                       </div>
                     </li>
                   ))}
