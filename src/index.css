@@ -10,6 +10,11 @@
   }
 }
 
+/* Fondo unificado para toda la app */
+.app-bg {
+  background: radial-gradient(circle at 20% 30%, #f6f8fb, #eaf1f9);
+}
+
 /* Animación de escala para feedback visual sutil */
 @keyframes scale-in {
   0% { transform: scale(0.8); opacity: 0; }

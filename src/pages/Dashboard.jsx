@@ -9,7 +9,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchDashboardSummary = async () => {
       try {
-        const token = localStorage.getItem('jwt');
+        const token = localStorage.getItem('token');
         if (!token) {
           setError('Usuario no autenticado');
           setLoading(false);
@@ -67,7 +67,7 @@ const Dashboard = () => {
       <h1 className="text-2xl font-semibold text-gray-800 mb-6">Bienvenido a tu panel, Hernán</h1>
       <p className="text-gray-500 mb-10">Aquí verás un resumen de tu actividad.</p>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl px-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl px-6 mx-auto">
         <div className="bg-white rounded-2xl p-6 shadow-sm flex flex-col items-center justify-center">
           <DollarSign className="text-green-500 w-10 h-10 mb-2" />
           <h2 className="text-gray-600 text-sm">Ingresos Totales (mes actual)</h2>
@@ -91,4 +91,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-

@@ -15,7 +15,7 @@ import Dashboard from './pages/Dashboard.jsx';
 function App() {
   const { isValidatingProfile } = useAuth();
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col app-bg">
       <Navbar />
       <main className="flex-grow">
         {isValidatingProfile && <FiscalProfileLoader />}
