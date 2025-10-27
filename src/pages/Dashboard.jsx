@@ -1,204 +1,232 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { DollarSign, FileMinus, Scale } from 'lucide-react';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+﻿// src/pages/Dashboard.jsx
+import React, { useEffect, useState } from "react";
+import { FaMoneyBillWave, FaFileInvoice, FaBalanceScale } from "react-icons/fa";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+} from "recharts";
 
-const Dashboard = () => {
-  const [data, setData] = useState(null);
-  const [monthly, setMonthly] = useState([]);
-  const [recent, setRecent] = useState([]);
+// KPI cards are rendered inline in the JSX below
+
+export default function Dashboard() {
+  // HOOKS EN ORDEN Y AL TOPE (nunca dentro de condicionales)
+  const [kpis, setKpis] = useState({ ingresos: 0, egresos: 0, balance: 0 });
+  const [serie, setSerie] = useState([]);
+  const [movimientos, setMovimientos] = useState([]);
+  const [alertas, setAlertas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Carga de datos
   useEffect(() => {
-    const fetchDashboardSummary = async () => {
+    let cancelled = false;
+
+    const fetchSummary = async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          setError('Usuario no autenticado');
-          setLoading(false);
-          return;
+        const token = localStorage.getItem("token");
+        const base = import.meta.env.VITE_API_BASE_URL || "https://montri-backend.onrender.com";
+        const url = `${base}/api/dashboard/summary`;
+
+        const res = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token || ""}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!res.ok) {
+          const txt = await res.text();
+          throw new Error(`HTTP ${res.status} - ${txt}`);
         }
 
-        const response = await fetch(
-          'https://montri-backend.onrender.com/api/dashboard/summary',
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const json = await res.json();
+        const data = json?.data ?? json;
 
-        if (!response.ok) {
-          const errData = await response.json().catch(() => ({}));
-          console.error('Error de backend:', errData);
-          throw new Error(errData.error?.message || 'Error al cargar el dashboard');
+        const ingresos =
+          data?.ingresosTotal ?? data?.ingresos ?? data?.totalIngresos ?? 0;
+        const egresos =
+          data?.egresosTotal ?? data?.egresos ?? data?.totalEgresos ?? 0;
+        const balance =
+          data?.balance ?? data?.balanceNeto ?? ingresos - egresos;
+
+        const serieData = Array.isArray(data?.serie)
+          ? data.serie
+          : Array.isArray(data?.chart)
+          ? data.chart
+          : [];
+
+        const movs = Array.isArray(data?.movimientos)
+          ? data.movimientos
+          : Array.isArray(data?.movs)
+          ? data.movs
+          : [];
+
+        const warns = Array.isArray(data?.alertas)
+          ? data.alertas
+          : Array.isArray(data?.alerts)
+          ? data.alerts
+          : [];
+
+        if (!cancelled) {
+          setKpis({ ingresos, egresos, balance });
+          setSerie(serieData);
+          setMovimientos(movs);
+          setAlertas(warns);
         }
-
-        const result = await response.json();
-        const payload = result?.data ?? result ?? null;
-        setData(payload);
-
-        // Series mensuales si existen en el resumen
-        const series = payload?.evolucionMensual || payload?.monthly || payload?.months || [];
-        setMonthly(Array.isArray(series) ? series : []);
-
-        // Últimos movimientos (ingresos y egresos)
-        try {
-          const [resIng, resEgr] = await Promise.all([
-            fetch('https://montri-backend.onrender.com/api/ingresos?sort=createdAt:desc&pagination[limit]=5', {
-              headers: { Authorization: `Bearer ${token}` },
-            }),
-            fetch('https://montri-backend.onrender.com/api/egresos?sort=createdAt:desc&pagination[limit]=5', {
-              headers: { Authorization: `Bearer ${token}` },
-            }),
-          ]);
-          const [dataIng, dataEgr] = await Promise.all([
-            resIng.ok ? resIng.json().catch(() => ({})) : {},
-            resEgr.ok ? resEgr.json().catch(() => ({})) : {},
-          ]);
-          const listIng = Array.isArray(dataIng?.data)
-            ? dataIng.data.map((it) => ({
-                id: `ing-${it?.id}`,
-                date: it?.attributes?.createdAt || it?.attributes?.fecha || '',
-                type: 'Ingreso',
-                description: it?.attributes?.descripcion || it?.attributes?.description || 'Ingreso',
-                amount: Number(it?.attributes?.monto ?? it?.attributes?.amount ?? 0),
-              }))
-            : [];
-          const listEgr = Array.isArray(dataEgr?.data)
-            ? dataEgr.data.map((it) => ({
-                id: `egr-${it?.id}`,
-                date: it?.attributes?.createdAt || it?.attributes?.fecha || '',
-                type: 'Gasto',
-                description: it?.attributes?.descripcion || it?.attributes?.description || 'Gasto',
-                amount: Number(it?.attributes?.monto ?? it?.attributes?.amount ?? 0),
-              }))
-            : [];
-          const merged = [...listIng, ...listEgr].sort((a, b) => new Date(b.date) - new Date(a.date));
-          setRecent(merged.slice(0, 5));
-        } catch {}
-      } catch (err) {
-        console.error('Error al obtener resumen del dashboard:', err);
-        setError('Error al cargar datos del dashboard');
+      } catch (e) {
+        if (!cancelled) setError(e.message || "Error al cargar el dashboard");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
-    fetchDashboardSummary();
+    fetchSummary();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-[70vh] text-gray-500">
-        Cargando datos del dashboard...
-      </div>
-    );
-  }
+  // Helpers
+  const money = (n) =>
+    (n ?? 0).toLocaleString("es-AR", { style: "currency", currency: "ARS" });
 
-  if (error) {
-    return (
-      <div className="flex justify-center items-center h-[70vh] text-red-500">
-        {error}
-      </div>
-    );
-  }
-
-  const { ingresos = 0, egresos = 0, balance = 0, categoriaTope, categoryLimit } = data || {};
-  const fmtARS = useMemo(() => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }), []);
-  const monthData = useMemo(() => (Array.isArray(monthly) ? monthly : []).map((d) => ({
-    mes: d.mes || d.month || d.label || '',
-    ingresos: Number(d.ingresos ?? d.income ?? d.in ?? 0),
-    egresos: Number(d.egresos ?? d.expense ?? d.out ?? 0),
-  })), [monthly]);
-  const limit = Number(categoriaTope ?? categoryLimit ?? 0);
-  const nearLimit = limit > 0 && Number(ingresos) >= 0.8 * limit;
-  const noActivity = recent.length === 0 && Number(ingresos) === 0 && Number(egresos) === 0;
-
+  // UI
   return (
-    <div className="min-h-[90vh] bg-gradient-to-b from-blue-50 to-white flex flex-col items-center py-10">
-      <h1 className="text-2xl font-semibold text-gray-800 mb-6">Bienvenido a tu panel, Hernán</h1>
-      <p className="text-gray-500 mb-10">Aquí verás un resumen de tu actividad.</p>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl px-6 mx-auto">
-        <div className="bg-white rounded-2xl p-6 shadow-sm flex flex-col items-center justify-center">
-          <DollarSign className="text-green-500 w-10 h-10 mb-2" />
-          <h2 className="text-gray-600 text-sm">Ingresos Totales (mes actual)</h2>
-          <p className="text-2xl font-semibold text-gray-800">{fmtARS.format(ingresos)}</p>
+    <div className="min-h-[90vh] bg-gradient-to-b from-blue-50/60 to-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-2xl sm:text-3xl font-semibold text-slate-800">
+            Bienvenido a tu panel, Hernán
+          </h1>
+          <p className="text-slate-500 mt-1">
+            Aquí verás un resumen de tu actividad.
+          </p>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm flex flex-col items-center justify-center">
-          <FileMinus className="text-red-500 w-10 h-10 mb-2" />
-          <h2 className="text-gray-600 text-sm">Gastos Totales (mes actual)</h2>
-          <p className="text-2xl font-semibold text-gray-800">{fmtARS.format(egresos)}</p>
-        </div>
+        {/* Loading / Error inline sin romper hooks */}
+        {loading && (
+          <div className="text-center text-slate-500 py-10">Cargando…</div>
+        )}
+        {!loading && error && (
+          <div className="text-center text-red-600 py-10">
+            Ocurrió un error: {error}
+          </div>
+        )}
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm flex flex-col items-center justify-center">
-          <Scale className="text-indigo-500 w-10 h-10 mb-2" />
-          <h2 className="text-gray-600 text-sm">Balance Neto</h2>
-          <p className={`text-2xl font-semibold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>{fmtARS.format(balance)}</p>
-        </div>
-      </div>
-
-      {/* Gráfico mensual */}
-      <MonthlyChart data={monthData} />
-
-      {/* Últimos movimientos */}
-      <div className="bg-white rounded-2xl shadow-sm p-6 w-full max-w-[1000px] mt-10">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">Últimos movimientos</h2>
-        {recent.length === 0 ? (
-          <p className="text-sm text-gray-500">Sin movimientos recientes.</p>
-        ) : (
-          <ul className="divide-y divide-gray-100">
-            {recent.map((m) => (
-              <li key={m.id} className="grid grid-cols-3 gap-2 py-2 text-sm">
-                <span className="text-gray-600">{new Date(m.date).toLocaleDateString('es-AR')}</span>
-                <span className={m.type === 'Ingreso' ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>{m.type}</span>
-                <div className="flex justify-between">
-                  <span className="text-gray-800">{m.description}</span>
-                  <span className="font-semibold">{fmtARS.format(m.amount)}</span>
+        {/* KPIs */}
+        {!loading && !error && (
+          <div className="mx-auto max-w-[1000px] px-4 sm:px-0 space-y-6">
+            <div className="flex flex-col sm:flex-row justify-center items-stretch gap-4 sm:gap-6">
+              <div className="flex items-center bg-white/90 backdrop-blur rounded-xl shadow-sm border border-slate-200 px-8 py-6 w-full sm:w-[320px]">
+                <FaMoneyBillWave className="text-emerald-500 text-3xl mr-4" />
+                <div>
+                  <div className="text-slate-500 text-sm">Ingresos Totales (mes actual)</div>
+                  <div className="text-2xl font-semibold">{money(kpis.ingresos)}</div>
                 </div>
-              </li>
-            ))}
-          </ul>
+              </div>
+
+              <div className="flex items-center bg-white/90 backdrop-blur rounded-xl shadow-sm border border-slate-200 px-8 py-6 w-full sm:w-[320px]">
+                <FaFileInvoice className="text-rose-500 text-3xl mr-4" />
+                <div>
+                  <div className="text-slate-500 text-sm">Gastos Totales (mes actual)</div>
+                  <div className="text-2xl font-semibold">{money(kpis.egresos)}</div>
+                </div>
+              </div>
+
+              <div className="flex items-center bg-white/90 backdrop-blur rounded-xl shadow-sm border border-slate-200 px-8 py-6 w-full sm:w-[320px]">
+                <FaBalanceScale className="text-indigo-500 text-3xl mr-4" />
+                <div>
+                  <div className="text-slate-500 text-sm">Balance Neto</div>
+                  <div className={`text-2xl font-semibold ${kpis.balance < 0 ? "text-rose-600" : "text-emerald-600"}`}>{money(kpis.balance)}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Gráfico (opcional) */}
+            <div className="bg-white/90 backdrop-blur rounded-xl shadow-sm border border-slate-200 p-6">
+              <h2 className="text-slate-800 font-medium mb-4">
+                Evolución mensual
+              </h2>
+              {Array.isArray(serie) && serie.length > 0 ? (
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={serie}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="label" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="ingresos" name="Ingresos" fill="#10b981" />
+                      <Bar dataKey="egresos" name="Gastos" fill="#ef4444" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="text-slate-500 text-sm text-center py-10">
+                  No hay datos suficientes para el gráfico.
+                </div>
+              )}
+            </div>
+
+            {/* Últimos movimientos */}
+            <div className="bg-white/90 backdrop-blur rounded-xl shadow-sm border border-slate-200 p-6">
+              <h2 className="text-slate-800 font-medium mb-4">
+                Últimos movimientos
+              </h2>
+              {Array.isArray(movimientos) && movimientos.length > 0 ? (
+                <ul className="divide-y divide-slate-200">
+                  {movimientos.slice(0, 5).map((m, i) => (
+                    <li key={i} className="py-3 flex items-center justify-between">
+                      <div className="text-slate-700 text-sm">
+                        <div className="font-medium">{m?.descripcion || m?.description || "Movimiento"}</div>
+                        <div className="text-slate-500">
+                          {m?.fecha || m?.date || ""}
+                        </div>
+                      </div>
+                      <div
+                        className={`text-sm font-semibold ${
+                          (m?.monto ?? m?.amount ?? 0) < 0
+                            ? "text-rose-600"
+                            : "text-emerald-600"
+                        }`}
+                      >
+                        {money(m?.monto ?? m?.amount ?? 0)}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="text-slate-400 text-sm text-center py-10">
+                  Aún no registraste movimientos.
+                </div>
+              )}
+            </div>
+
+            {/* Alertas fiscales */}
+            <div className="bg-white/90 backdrop-blur rounded-xl shadow-sm border border-slate-200 p-6">
+              <h2 className="text-slate-800 font-medium mb-4">Alertas fiscales</h2>
+              {Array.isArray(alertas) && alertas.length > 0 ? (
+                <ul className="list-disc pl-5 space-y-1">
+                  {alertas.map((a, i) => (
+                    <li key={i} className="text-sm text-amber-700">
+                      {a?.mensaje || a?.message || String(a)}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="text-slate-400 text-sm text-center py-6">Sin alertas por ahora.</div>
+              )}
+            </div>
+          </div>
         )}
       </div>
-
-      {/* Alertas fiscales */}
-      <div className="w-full max-w-[1000px] mt-10 space-y-3">
-        {Number(balance) < 0 && (
-          <div className="bg-red-50 border-l-4 border-red-400 text-red-700 p-3 rounded-lg">⚠️ Tu balance es negativo este mes.</div>
-        )}
-        {nearLimit && (
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-700 p-3 rounded-lg">⚠️ Estás cerca del límite de facturación de tu categoría.</div>
-        )}
-        {noActivity && (
-          <div className="bg-gray-50 border-l-4 border-gray-300 text-gray-700 p-3 rounded-lg">⚠️ Aún no registraste actividad este mes.</div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-export default Dashboard;
-
-function MonthlyChart({ data }) {
-  if (!data || data.length === 0) return null;
-
-  return (
-    <div className="bg-white rounded-2xl shadow-sm p-6 w-full max-w-[1000px] mt-10">
-      <h2 className="text-lg font-semibold text-gray-800 mb-4">Gráfico mensual</h2>
-      <ResponsiveContainer width="100%" height={260}>
-        <BarChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="mes" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Bar dataKey="ingresos" fill="#22c55e" name="Ingresos" />
-          <Bar dataKey="egresos" fill="#ef4444" name="Gastos" />
-        </BarChart>
-      </ResponsiveContainer>
     </div>
   );
 }
