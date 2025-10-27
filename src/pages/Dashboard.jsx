@@ -1,4 +1,4 @@
-﻿// src/pages/Dashboard.jsx
+﻿﻿﻿﻿﻿﻿﻿// src/pages/Dashboard.jsx
 import React, { useEffect, useState } from "react";
 import { FaMoneyBillWave, FaFileInvoice, FaBalanceScale } from "react-icons/fa";
 import {
@@ -67,7 +67,7 @@ export default function Dashboard() {
           ? data.movs
           : [];
 
-        const warns = Array.isArray(data?.alertas)
+        const wAúns = Array.isArray(data?.alertas)
           ? data.alertas
           : Array.isArray(data?.alerts)
           ? data.alerts
@@ -77,7 +77,7 @@ export default function Dashboard() {
           setKpis({ ingresos, egresos, balance });
           setSerie(serieData);
           setMovimientos(movs);
-          setAlertas(warns);
+          setAlertas(wAúns);
         }
       } catch (e) {
         if (!cancelled) setError(e.message || "Error al cargar el dashboard");
@@ -98,16 +98,12 @@ export default function Dashboard() {
 
   // UI
   return (
-    <div className="min-h-[90vh] bg-gradient-to-b from-blue-50/60 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl sm:text-3xl font-semibold text-slate-800">
-            Bienvenido a tu panel, Hernán
-          </h1>
-          <p className="text-slate-500 mt-1">
-            Aquí verás un resumen de tu actividad.
-          </p>
+                <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-gray-800">Bienvenido a tu panel, Hernán</h1>
+          <p className="text-gray-500 text-base mb-6">Aquí verás un resumen de tu actividad.</p>
         </div>
 
         {/* Loading / Error inline sin romper hooks */}
@@ -122,36 +118,34 @@ export default function Dashboard() {
 
         {/* KPIs */}
         {!loading && !error && (
-          <div className="mx-auto max-w-[1000px] px-4 sm:px-0 space-y-6">
+          <div className="mx-auto max-w-[1000px] px-4 sm:px-0 space-y-8">
             <div className="flex flex-col sm:flex-row justify-center items-stretch gap-4 sm:gap-6">
-              <div className="flex items-center bg-white/90 backdrop-blur rounded-xl shadow-sm border border-slate-200 px-8 py-6 w-full sm:w-[320px]">
-                <FaMoneyBillWave className="text-emerald-500 text-3xl mr-4" />
-                <div>
-                  <div className="text-slate-500 text-sm">Ingresos Totales (mes actual)</div>
+              <div className="flex items-center gap-4 bg-white/95 backdrop-blur rounded-xl shadow-md hover:shadow-lg transition-shadow border border-slate-200 px-8 py-6 w-full min-w-[280px] sm:w-[320px] min-h-[120px]">
+                <FaMoneyBillWave size={28} className="text-emerald-500 shrink-0" />
+                <div className="flex flex-col items-start">
                   <div className="text-2xl font-semibold">{money(kpis.ingresos)}</div>
+                  <div className="text-sm text-gray-500">Ingresos Totales (mes actual)</div>
                 </div>
               </div>
 
-              <div className="flex items-center bg-white/90 backdrop-blur rounded-xl shadow-sm border border-slate-200 px-8 py-6 w-full sm:w-[320px]">
-                <FaFileInvoice className="text-rose-500 text-3xl mr-4" />
-                <div>
-                  <div className="text-slate-500 text-sm">Gastos Totales (mes actual)</div>
+              <div className="flex items-center gap-4 bg-white/95 backdrop-blur rounded-xl shadow-md hover:shadow-lg transition-shadow border border-slate-200 px-8 py-6 w-full min-w-[280px] sm:w-[320px] min-h-[120px]">
+                <FaFileInvoice size={28} className="text-rose-500 shrink-0" />
+                <div className="flex flex-col items-start">
                   <div className="text-2xl font-semibold">{money(kpis.egresos)}</div>
+                  <div className="text-sm text-gray-500">Gastos Totales (mes actual)</div>
                 </div>
               </div>
 
-              <div className="flex items-center bg-white/90 backdrop-blur rounded-xl shadow-sm border border-slate-200 px-8 py-6 w-full sm:w-[320px]">
-                <FaBalanceScale className="text-indigo-500 text-3xl mr-4" />
-                <div>
-                  <div className="text-slate-500 text-sm">Balance Neto</div>
+              <div className="flex items-center gap-4 bg-white/95 backdrop-blur rounded-xl shadow-md hover:shadow-lg transition-shadow border border-slate-200 px-8 py-6 w-full min-w-[280px] sm:w-[320px] min-h-[120px]">
+                <FaBalanceScale size={28} className="text-indigo-500 shrink-0" />
+                <div className="flex flex-col items-start">
                   <div className={`text-2xl font-semibold ${kpis.balance < 0 ? "text-rose-600" : "text-emerald-600"}`}>{money(kpis.balance)}</div>
+                  <div className="text-sm text-gray-500">Balance Neto</div>
                 </div>
               </div>
-            </div>
-
-            {/* Gráfico (opcional) */}
-            <div className="bg-white/90 backdrop-blur rounded-xl shadow-sm border border-slate-200 p-6">
-              <h2 className="text-slate-800 font-medium mb-4">
+            </div>            {/* gráfico (opcional) */}
+            <div className="bg-white/95 backdrop-blur rounded-xl shadow-md hover:shadow-lg transition-shadow border border-slate-200 p-6">
+              <h2 className="text-slate-800 text-lg font-semibold mb-4">
                 Evolución mensual
               </h2>
               {Array.isArray(serie) && serie.length > 0 ? (
@@ -176,14 +170,14 @@ export default function Dashboard() {
             </div>
 
             {/* Últimos movimientos */}
-            <div className="bg-white/90 backdrop-blur rounded-xl shadow-sm border border-slate-200 p-6">
-              <h2 className="text-slate-800 font-medium mb-4">
+            <div className="bg-white/95 backdrop-blur rounded-xl shadow-md hover:shadow-lg transition-shadow border border-slate-200 p-6">
+              <h2 className="text-slate-800 text-lg font-semibold mb-4">
                 Últimos movimientos
               </h2>
               {Array.isArray(movimientos) && movimientos.length > 0 ? (
                 <ul className="divide-y divide-slate-200">
                   {movimientos.slice(0, 5).map((m, i) => (
-                    <li key={i} className="py-3 flex items-center justify-between">
+                    <li key={i} className="py-3 flex items-center gap-4 justify-between">
                       <div className="text-slate-700 text-sm">
                         <div className="font-medium">{m?.descripcion || m?.description || "Movimiento"}</div>
                         <div className="text-slate-500">
@@ -210,8 +204,8 @@ export default function Dashboard() {
             </div>
 
             {/* Alertas fiscales */}
-            <div className="bg-white/90 backdrop-blur rounded-xl shadow-sm border border-slate-200 p-6">
-              <h2 className="text-slate-800 font-medium mb-4">Alertas fiscales</h2>
+            <div className="bg-white/95 backdrop-blur rounded-xl shadow-md hover:shadow-lg transition-shadow border border-slate-200 p-6">
+              <h2 className="text-slate-800 text-lg font-semibold mb-4">Alertas fiscales</h2>
               {Array.isArray(alertas) && alertas.length > 0 ? (
                 <ul className="list-disc pl-5 space-y-1">
                   {alertas.map((a, i) => (
