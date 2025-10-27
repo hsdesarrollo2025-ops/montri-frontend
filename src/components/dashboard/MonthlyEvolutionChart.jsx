@@ -73,9 +73,9 @@ export default function MonthlyEvolutionChart({ ingresos = [], egresos = [] }) {
             setInData(Array.isArray(di?.semanal) ? di.semanal : Array.isArray(di) ? di : []);
             setOutData(Array.isArray(de?.semanal) ? de.semanal : Array.isArray(de) ? de : []);
           } else {
-            // Mensual: arreglo de { mes, monto } o similar
-            setInData(Array.isArray(di) ? di : Array.isArray(di?.items) ? di.items : []);
-            setOutData(Array.isArray(de) ? de : Array.isArray(de?.items) ? de.items : []);
+            // Mensual: respuesta en di.mensual / de.mensual con [{ mes, monto }]
+            setInData(Array.isArray(di?.mensual) ? di.mensual : Array.isArray(di) ? di : Array.isArray(di?.items) ? di.items : []);
+            setOutData(Array.isArray(de?.mensual) ? de.mensual : Array.isArray(de) ? de : Array.isArray(de?.items) ? de.items : []);
           }
         }
       } catch (e) {
