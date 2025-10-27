@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { DollarSign, FileMinus, Scale } from 'lucide-react';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
 const Dashboard = () => {
   const [data, setData] = useState(null);
@@ -181,52 +182,23 @@ const Dashboard = () => {
 
 export default Dashboard;
 
-// Componente con intento de uso de Recharts; si no está disponible, renderiza un fallback simple
 function MonthlyChart({ data }) {
-  const [lib, setLib] = useState(null);
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const m = await import('recharts');
-        if (mounted) setLib(m);
-      } catch {
-        if (mounted) setLib(null);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
   if (!data || data.length === 0) return null;
 
   return (
     <div className="bg-white rounded-2xl shadow-sm p-6 w-full max-w-[1000px] mt-10">
       <h2 className="text-lg font-semibold text-gray-800 mb-4">Gráfico mensual</h2>
-      {lib ? (
-        <lib.ResponsiveContainer width="100%" height={260}>
-          <lib.BarChart data={data}>
-            <lib.CartesianGrid strokeDasharray="3 3" />
-            <lib.XAxis dataKey="mes" />
-            <lib.YAxis />
-            <lib.Tooltip />
-            <lib.Legend />
-            <lib.Bar dataKey="ingresos" fill="#22c55e" name="Ingresos" />
-            <lib.Bar dataKey="egresos" fill="#ef4444" name="Gastos" />
-          </lib.BarChart>
-        </lib.ResponsiveContainer>
-      ) : (
-        <div className="h-64 flex items-end gap-3">
-          {data.map((d, idx) => (
-            <div key={idx} className="flex-1 flex items-end gap-1">
-              <div className="bg-green-500/80 w-4 rounded-t" style={{ height: `${(d.ingresos / Math.max(1, ...data.map(x=>Math.max(x.ingresos,x.egresos)))) * 100}%` }} />
-              <div className="bg-red-500/80 w-4 rounded-t" style={{ height: `${(d.egresos / Math.max(1, ...data.map(x=>Math.max(x.ingresos,x.egresos)))) * 100}%` }} />
-            </div>
-          ))}
-        </div>
-      )}
+      <ResponsiveContainer width="100%" height={260}>
+        <BarChart data={data}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="mes" />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <Bar dataKey="ingresos" fill="#22c55e" name="Ingresos" />
+          <Bar dataKey="egresos" fill="#ef4444" name="Gastos" />
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   );
 }
