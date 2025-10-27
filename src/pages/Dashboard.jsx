@@ -17,11 +17,18 @@ const Dashboard = () => {
           return;
         }
 
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/dashboard/summary`, {
+        const base = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || '';
+        const res = await fetch(`${base}/dashboard/summary`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
+        if (res.status === 404) {
+          // Si el backend aún no expone el endpoint, mostrar 0s en vez de error
+          setData({ ingresos: 0, egresos: 0, balance: 0 });
+          setLoading(false);
+          return;
+        }
         if (!res.ok) throw new Error('Error al obtener resumen');
         const json = await res.json().catch(() => ({}));
         // Admite estructura {data: {...}} o {...}
