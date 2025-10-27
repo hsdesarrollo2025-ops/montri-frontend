@@ -63,7 +63,7 @@ const Dashboard = () => {
   const { ingresos = 0, egresos = 0, balance = 0 } = data || {};
 
   return (
-    <div className="min-h-[90vh] bg-gray-50 flex flex-col items-center py-10">
+    <div className="min-h-[90vh] bg-gradient-to-b from-blue-50 to-white flex flex-col items-center py-10">
       <h1 className="text-2xl font-semibold text-gray-800 mb-6">Bienvenido a tu panel, Hernán</h1>
       <p className="text-gray-500 mb-10">Aquí verás un resumen de tu actividad.</p>
 
