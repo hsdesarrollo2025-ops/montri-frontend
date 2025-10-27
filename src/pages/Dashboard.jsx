@@ -11,13 +11,15 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
-
+import MonthlyEvolutionChart from "../components/dashboard/MonthlyEvolutionChart.jsx";
 // KPI cards are rendered inline in the JSX below
 
 export default function Dashboard() {
   // HOOKS EN ORDEN Y AL TOPE (nunca dentro de condicionales)
   const [kpis, setKpis] = useState({ ingresos: 0, egresos: 0, balance: 0 });
-  const [serie, setSerie] = useState([]);
+  
+  const [mesIngresos, setMesIngresos] = useState([]);
+  const [mesEgresos, setMesEgresos] = useState([]);
   const [movimientos, setMovimientos] = useState([]);
   const [alertas, setAlertas] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -67,7 +69,7 @@ export default function Dashboard() {
           ? data.movs
           : [];
 
-        const wAúns = Array.isArray(data?.alertas)
+        const warns = Array.isArray(data?.alertas)
           ? data.alertas
           : Array.isArray(data?.alerts)
           ? data.alerts
@@ -75,9 +77,8 @@ export default function Dashboard() {
 
         if (!cancelled) {
           setKpis({ ingresos, egresos, balance });
-          setSerie(serieData);
           setMovimientos(movs);
-          setAlertas(wAúns);
+          setAlertas(warns);
         }
       } catch (e) {
         if (!cancelled) setError(e.message || "Error al cargar el dashboard");
@@ -92,6 +93,38 @@ export default function Dashboard() {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const base = import.meta.env.VITE_API_BASE_URL || "https://montri-backend.onrender.com";
+        const make = async (endpoint) => {
+          const r = await fetch(`${base}${endpoint}`, {
+            headers: { Authorization: `Bearer ${token || ""}`, "Content-Type": "application/json" },
+          });
+          if (!r.ok) return [];
+          const j = await r.json().catch(() => ({}));
+          const d = j?.data ?? j ?? {};
+          const semanal = Array.isArray(d?.semanal) ? d.semanal : Array.isArray(d) ? d : Array.isArray(d?.items) ? d.items : [];
+          return semanal.map((it) => ({
+            semana: Number(it?.semana ?? it?.week ?? it?.label ?? 0) || 0,
+            monto: Number(it?.monto ?? it?.total ?? it?.amount ?? 0) || 0,
+          }));
+        };
+        const [ing, egr] = await Promise.all([
+          make('/api/ingresos/summary'),
+          make('/api/egresos/summary'),
+        ]);
+        if (!cancelled) {
+          setMesIngresos(ing);
+          setMesEgresos(egr);
+        }
+      } catch {}
+    };
+    run();
+    return () => { cancelled = true; };
+  }, []);
   // Helpers
   const money = (n) =>
     (n ?? 0).toLocaleString("es-AR", { style: "currency", currency: "ARS" });
@@ -148,25 +181,7 @@ export default function Dashboard() {
               <h2 className="text-slate-800 text-lg font-semibold mb-4">
                 Evolución mensual
               </h2>
-              {Array.isArray(serie) && serie.length > 0 ? (
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={serie}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="label" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="ingresos" name="Ingresos" fill="#10b981" />
-                      <Bar dataKey="egresos" name="Gastos" fill="#ef4444" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="text-slate-500 text-sm text-center py-10">
-                  No hay datos suficientes para el gráfico.
-                </div>
-              )}
+              <MonthlyEvolutionChart ingresos={mesIngresos} egresos={mesEgresos} />
             </div>
 
             {/* Últimos movimientos */}
