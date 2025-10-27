@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { DollarSign, FileMinus, Scale } from 'lucide-react';
 
 const Dashboard = () => {
@@ -18,17 +17,15 @@ const Dashboard = () => {
           return;
         }
 
-        const response = await axios.get(
-          `${import.meta.env.VITE_API_URL}/dashboard/summary`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/dashboard/summary`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!res.ok) throw new Error('Error al obtener resumen');
+        const json = await res.json().catch(() => ({}));
         // Admite estructura {data: {...}} o {...}
-        setData(response?.data?.data ?? response?.data ?? null);
+        setData(json?.data ?? json ?? null);
       } catch (err) {
         console.error('Error al obtener resumen del dashboard:', err);
         setError('Error al cargar datos del dashboard');
@@ -96,4 +93,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
