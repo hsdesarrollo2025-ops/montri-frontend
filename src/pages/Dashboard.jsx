@@ -1,6 +1,7 @@
 ﻿﻿﻿﻿﻿﻿﻿// src/pages/Dashboard.jsx
 import React, { useEffect, useState } from "react";
 import { FaMoneyBillWave, FaFileInvoice, FaBalanceScale } from "react-icons/fa";
+import { ArrowDownCircle, ArrowUpCircle } from "lucide-react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -80,6 +81,28 @@ export default function Dashboard() {
           setMovimientos(movs);
           setAlertas(warns);
         }
+
+        // Cargar últimos movimientos desde los endpoints de summary
+        try {
+          const headers = { Authorization: `Bearer ${token || ""}`, "Content-Type": "application/json" };
+          const [ri, re] = await Promise.all([
+            fetch(`${base}/api/ingresos/summary`, { headers }),
+            fetch(`${base}/api/egresos/summary`, { headers }),
+          ]);
+          const parseUltimos = async (resp) => {
+            if (!resp || !resp.ok) return [];
+            const j = await resp.json().catch(() => ({}));
+            const d = j?.data ?? j ?? {};
+            const arr = Array.isArray(d?.ultimos) ? d.ultimos : [];
+            return Array.isArray(arr) ? arr : [];
+          };
+          const [uIng, uEgr] = await Promise.all([parseUltimos(ri), parseUltimos(re)]);
+          const merged = [
+            ...uIng.map((x) => ({ ...x, tipo: "Ingreso" })),
+            ...uEgr.map((x) => ({ ...x, tipo: "Egreso" })),
+          ].sort((a, b) => new Date(b?.fecha || b?.date || 0) - new Date(a?.fecha || a?.date || 0));
+          if (!cancelled && merged.length) setMovimientos(merged);
+        } catch {}
       } catch (e) {
         if (!cancelled) setError(e.message || "Error al cargar el dashboard");
       } finally {
