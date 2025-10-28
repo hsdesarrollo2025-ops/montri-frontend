@@ -341,165 +341,81 @@ export default function Dashboard() {
 
 
         {/* KPIs */}
-
         {!loading && !error && (
-
           <div className="mx-auto max-w-[1000px] px-4 sm:px-0 space-y-8">
-
             <div className="flex flex-col sm:flex-row justify-center items-stretch gap-4 sm:gap-6">
-
               <div className="flex items-center gap-4 bg-white/95 backdrop-blur rounded-xl shadow-md hover:shadow-lg transition-shadow border border-slate-200 px-8 py-6 w-full min-w-[280px] sm:w-[320px] min-h-[120px]">
-
                 <FaMoneyBillWave size={28} className="text-emerald-500 shrink-0" />
-
                 <div className="flex flex-col items-start">
-
                   <div className="text-2xl font-semibold">{money(kpis.ingresos)}</div>
-
                   <div className="text-sm text-gray-500">Ingresos Totales (mes actual)</div>
-
                 </div>
-
               </div>
 
-
-
               <div className="flex items-center gap-4 bg-white/95 backdrop-blur rounded-xl shadow-md hover:shadow-lg transition-shadow border border-slate-200 px-8 py-6 w-full min-w-[280px] sm:w-[320px] min-h-[120px]">
-
                 <FaFileInvoice size={28} className="text-rose-500 shrink-0" />
-
                 <div className="flex flex-col items-start">
-
                   <div className="text-2xl font-semibold">{money(kpis.egresos)}</div>
-
                   <div className="text-sm text-gray-500">Gastos Totales (mes actual)</div>
-
                 </div>
-
               </div>
-
-
 
               <div className="flex items-center gap-4 bg-white/95 backdrop-blur rounded-xl shadow-md hover:shadow-lg transition-shadow border border-slate-200 px-8 py-6 w-full min-w-[280px] sm:w-[320px] min-h-[120px]">
-
                 <FaBalanceScale size={28} className="text-indigo-500 shrink-0" />
-
                 <div className="flex flex-col items-start">
-
                   <div className={`text-2xl font-semibold ${kpis.balance < 0 ? "text-red-600" : "text-green-600"}`}>{money(kpis.balance)}</div>
-
                   <div className="text-sm text-gray-500">Balance Neto</div>
-
                 </div>
-
               </div>
-
-            </div>            {/* gráfico (opcional) */}
+            </div>
 
             <div className="bg-white/95 backdrop-blur rounded-xl shadow-md hover:shadow-lg transition-shadow border border-slate-200 p-6">
-
-              <h2 className="text-slate-800 text-lg font-semibold mb-4">
-
-                Evolución mensual
-
-              </h2>
-
+              <h2 className="text-slate-800 text-lg font-semibold mb-4">Evolución mensual</h2>
               <MonthlyEvolutionChart ingresos={mesIngresos} egresos={mesEgresos} />
-
             </div>
 
-
-
-            {/* Últimos movimientos */}
-
-            <div className="bg-white/95 backdrop-blur rounded-xl shadow-md hover:shadow-lg transition-shadow border border-slate-200 p-6">
-
-              <h2 className="text-slate-800 text-lg font-semibold mb-4">
-
-                Últimos movimientos
-
-              </h2>
-
-              {Array.isArray(movimientos) && movimientos.length > 0 ? (
-
-                <ul className="divide-y divide-slate-200">
-
-                  {movimientos.slice(0, 5).map((m, i) => (
-
-                    <li key={i} className="py-3 flex items-center gap-4 justify-between">
-
-                      <div className="text-slate-700 text-sm">
-
-                        <div className="font-medium">{m?.descripcion || m?.description || "Movimiento"}</div>
-
-                        <div className="text-slate-500">
-
-                          {m?.fecha || m?.date || ""}
-
+            <div className="flex flex-col lg:flex-row gap-6">
+              <div className="flex-1 bg-white/95 backdrop-blur rounded-xl shadow-md hover:shadow-lg transition-shadow border border-slate-200 p-6">
+                <h2 className="text-slate-800 text-lg font-semibold mb-4">Últimos movimientos</h2>
+                {Array.isArray(movimientos) && movimientos.length > 0 ? (
+                  <ul className="divide-y divide-slate-200">
+                    {movimientos.slice(0, 5).map((m, i) => (
+                      <li key={i} className="py-3 flex items-center justify-between">
+                        <div className="text-slate-700 text-sm">
+                          <div className="font-medium">{m?.descripcion || m?.description || "Movimiento"}</div>
+                          <div className="text-slate-500">{m?.fecha || m?.date || ""}</div>
                         </div>
-
-                      </div>
-
-                      <div
-
-                        className={`text-sm font-semibold ${m?.tipo === "Egreso" ? "text-red-600" : "text-green-600"}`}
-
-                      >
-
-                        {m?.tipo === "Egreso" ? "-" : "+"}{money(m?.monto ?? m?.amount ?? 0)}
-
-                      </div>
-
-                    </li>
-
-                  ))}
-
-                </ul>
-
-              ) : (
-
-                <div className="text-slate-400 text-sm text-center py-10">
-
-                  Aún no registraste movimientos.
-
-                </div>
-
-              )}
-
-            </div>
-
-
-
-            {/* Alertas fiscales */}
-
-            <div className="bg-white/95 backdrop-blur rounded-xl shadow-md hover:shadow-lg transition-shadow border border-slate-200 p-6">
-
-              <h2 className="text-slate-800 text-lg font-semibold mb-4">Alertas fiscales</h2>
-
-                            <div className="space-y-3">
-                {alertasFiscalesMock.map((a) => {
-                  const color = a.tipo === "advertencia" ? "text-yellow-500" : a.tipo === "recordatorio" ? "text-blue-500" : a.tipo === "ok" ? "text-green-600" : "text-gray-500";
-                  const Icon = a.icono === "CalendarDays" ? CalendarDays : a.icono === "AlertTriangle" ? AlertTriangle : a.icono === "Info" ? Info : CheckCircle2;
-                  return (
-                    <div key={a.id} className="flex items-center gap-3 p-3 rounded-lg border bg-white shadow-sm">
-                      <Icon className={`${color}`} size={18} />
-                      <p className="text-gray-700 text-sm">{a.mensaje}</p>
-                    </div>
-                  );
-                })}
+                        <div className={`text-sm font-semibold ${m?.tipo === "Egreso" ? "text-red-600" : "text-green-600"}`}>
+                          {m?.tipo === "Egreso" ? "-" : "+"}{money(m?.monto ?? m?.amount ?? 0)}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="text-slate-400 text-sm text-center py-10">Aún no registraste movimientos.</div>
+                )}
               </div>
 
+              <div className="w-full lg:flex-1 bg-white/95 backdrop-blur rounded-xl shadow-md hover:shadow-lg transition-shadow border border-slate-200 p-6">
+                <h2 className="text-slate-800 text-lg font-semibold mb-4">Alertas fiscales</h2>
+                <div className="space-y-3">
+                  {alertasFiscalesMock.map((a) => {
+                    const color = a.tipo === "advertencia" ? "text-yellow-500" : a.tipo === "recordatorio" ? "text-blue-500" : a.tipo === "ok" ? "text-green-600" : "text-gray-500";
+                    const Icon = a.icono === "CalendarDays" ? CalendarDays : a.icono === "AlertTriangle" ? AlertTriangle : a.icono === "Info" ? Info : CheckCircle2;
+                    return (
+                      <div key={a.id} className="flex items-center gap-3 p-3 rounded-lg border bg-white shadow-sm">
+                        <Icon className={color} size={18} />
+                        <p className="text-gray-700 text-sm">{a.mensaje}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-
           </div>
-
         )}
 
       </div>
-
     </div>
-
   );
-
 }
-
