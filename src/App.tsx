@@ -11,6 +11,7 @@ import Footer from './components/Footer';
 import Register from './pages/Register.jsx';
 import Login from './pages/Login.jsx';
 import Dashboard from './pages/Dashboard.jsx';
+import Movimientos from './pages/movimientos/index.jsx';
 
 function App() {
   const { isValidatingProfile } = useAuth();
@@ -28,6 +29,7 @@ function App() {
           <Route path="/perfil-fiscal/C" element={<FiscalProfileC />} />
           <Route path="/perfil-fiscal/completado" element={<PerfilFiscalCompletado />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/movimientos" element={<Movimientos />} />
         </Routes>
       </main>
       <Footer />
