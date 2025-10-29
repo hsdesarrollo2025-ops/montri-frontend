@@ -1,4 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
+import ModalNuevoIngreso from "../../components/movimientos/ModalNuevoIngreso.jsx";
+import ModalNuevoEgreso from "../../components/movimientos/ModalNuevoEgreso.jsx";
 
 export default function Movimientos() {
   const [ingresos, setIngresos] = useState([]);
@@ -7,49 +9,47 @@ export default function Movimientos() {
   const [error, setError] = useState("");
   const [showIngresoModal, setShowIngresoModal] = useState(false);
   const [showEgresoModal, setShowEgresoModal] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
 
-  useEffect(() => {
+  const fetchMovimientos = useCallback(async () => {
     let cancelled = false;
-    const run = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const base = import.meta.env.VITE_API_BASE_URL || "https://montri-backend.onrender.com";
-        const headers = {
-          Authorization: `Bearer ${token || ""}`,
-          "Content-Type": "application/json",
-        };
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const base = import.meta.env.VITE_API_BASE_URL || "https://montri-backend.onrender.com";
+      const headers = {
+        Authorization: `Bearer ${token || ""}`,
+        "Content-Type": "application/json",
+      };
 
-        const parseList = async (resp) => {
-          if (!resp || !resp.ok) return [];
-          const j = await resp.json().catch(() => ({}));
-          const d = j?.data ?? j ?? {};
-          if (Array.isArray(d)) return d;
-          if (Array.isArray(d?.items)) return d.items;
-          if (Array.isArray(d?.results)) return d.results;
-          return [];
-        };
+      const parseList = async (resp) => {
+        if (!resp || !resp.ok) return [];
+        const j = await resp.json().catch(() => ({}));
+        const d = j?.data ?? j ?? {};
+        if (Array.isArray(d)) return d;
+        if (Array.isArray(d?.items)) return d.items;
+        if (Array.isArray(d?.results)) return d.results;
+        return [];
+      };
 
-        const [ri, re] = await Promise.all([
-          fetch(`${base}/api/ingresos`, { headers }),
-          fetch(`${base}/api/egresos`, { headers }),
-        ]);
+      const [ri, re] = await Promise.all([
+        fetch(`${base}/api/ingresos`, { headers }),
+        fetch(`${base}/api/egresos`, { headers }),
+      ]);
 
-        const [li, le] = await Promise.all([parseList(ri), parseList(re)]);
-        if (!cancelled) {
-          setIngresos(Array.isArray(li) ? li : []);
-          setEgresos(Array.isArray(le) ? le : []);
-        }
-      } catch (e) {
-        if (!cancelled) setError(e?.message || "Error al cargar movimientos");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    run();
-    return () => {
-      cancelled = true;
-    };
+      const [li, le] = await Promise.all([parseList(ri), parseList(re)]);
+      setIngresos(Array.isArray(li) ? li : []);
+      setEgresos(Array.isArray(le) ? le : []);
+      setError("");
+    } catch (e) {
+      setError(e?.message || "Error al cargar movimientos");
+    } finally {
+      setLoading(false);
+    }
+    return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => { fetchMovimientos(); }, [fetchMovimientos]);
 
   const movimientos = useMemo(() => {
     const mapItem = (it, tipo) => ({
@@ -71,6 +71,11 @@ export default function Movimientos() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        {successMsg && (
+          <div className="mb-4 px-4 py-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm">
+            {successMsg}
+          </div>
+        )}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-gray-800">Movimientos registrados</h1>
           <div className="flex gap-3">
@@ -149,36 +154,24 @@ export default function Movimientos() {
         )}
 
         {showIngresoModal && (
-          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="w-full max-w-md bg-white rounded-xl shadow-lg border border-slate-200 p-6">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-semibold text-slate-800">Nuevo ingreso</h2>
-                <button className="text-slate-500 hover:text-slate-700" onClick={() => setShowIngresoModal(false)}>✕</button>
-              </div>
-              <p className="text-sm text-slate-600">Formulario de ingreso (próximamente)</p>
-              <div className="mt-5 text-right">
-                <button className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700" onClick={() => setShowIngresoModal(false)}>Cerrar</button>
-              </div>
-            </div>
-          </div>
+          <ModalNuevoIngreso
+            open={showIngresoModal}
+            onClose={() => setShowIngresoModal(false)}
+            onCreated={() => {
+              fetchMovimientos();
+              setSuccessMsg("Ingreso registrado correctamente");
+              setTimeout(() => setSuccessMsg(""), 3000);
+            }}
+          />
         )}
 
         {showEgresoModal && (
-          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="w-full max-w-md bg-white rounded-xl shadow-lg border border-slate-200 p-6">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-semibold text-slate-800">Nuevo egreso</h2>
-                <button className="text-slate-500 hover:text-slate-700" onClick={() => setShowEgresoModal(false)}>✕</button>
-              </div>
-              <p className="text-sm text-slate-600">Formulario de egreso (próximamente)</p>
-              <div className="mt-5 text-right">
-                <button className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700" onClick={() => setShowEgresoModal(false)}>Cerrar</button>
-              </div>
-            </div>
-          </div>
+          <ModalNuevoEgreso
+            open={showEgresoModal}
+            onClose={() => setShowEgresoModal(false)}
+          />
         )}
       </div>
     </div>
   );
 }
-
