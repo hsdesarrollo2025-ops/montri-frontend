@@ -17,17 +17,6 @@ export default function ModalNuevoIngreso({ open = true, onClose, onCreated }) {
   const apiBase = import.meta.env.VITE_API_BASE_URL || 'https://montri-backend.onrender.com';
   const { data: enumsData, loading: enumsLoading, error: enumsError } = useEnums(apiBase, token);
 
-  const decodeUserId = (token) => {
-    try {
-      const payload = token?.split('.')[1];
-      if (!payload) return null;
-      const json = JSON.parse(atob(payload));
-      return json?.id || json?.userId || json?.user?.id || null;
-    } catch {
-      return null;
-    }
-  };
-
   const validate = () => {
     const errs = [];
     if (!descripcion.trim()) errs.push('La descripción es obligatoria');
@@ -52,30 +41,22 @@ export default function ModalNuevoIngreso({ open = true, onClose, onCreated }) {
       setSubmitting(true);
       const token = localStorage.getItem('token');
       const base = import.meta.env.VITE_API_BASE_URL || 'https://montri-backend.onrender.com';
-      const userId = decodeUserId(token);
-
-      const payload = {
-        data: {
-          descripcion: descripcion.trim(),
-          monto: Number(monto),
-          fecha,
-          categoria,
-          metodo_cobro: metodoCobro,
-          comprobante: comprobante?.trim() || undefined,
-        },
+      const data = {
+        descripcion: descripcion.trim(),
+        monto: Number(monto),
+        fecha,
+        categoria,
+        metodo_cobro: metodoCobro,
+        comprobante: comprobante?.trim() || undefined,
       };
-      if (userId) {
-        payload.data.user = userId; // si el modelo espera relación user
-        payload.data.userId = userId; // fallback si espera userId
-      }
 
       const res = await fetch(`${base}/api/ingresos`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${token || ''}`,
           'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ data }),
       });
 
       if (!res.ok) {

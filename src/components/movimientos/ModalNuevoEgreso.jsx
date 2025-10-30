@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useEnums } from '../../hooks/useEnums';
 
-export default function ModalNuevoEgreso({ open = true, onClose }) {
+export default function ModalNuevoEgreso({ open = true, onClose, onCreated }) {
   const [descripcion, setDescripcion] = useState('');
   const [fecha, setFecha] = useState('');
   const [monto, setMonto] = useState('');
@@ -10,6 +10,7 @@ export default function ModalNuevoEgreso({ open = true, onClose }) {
   const [deducible, setDeducible] = useState('false');
   const [comprobante, setComprobante] = useState('');
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const maxDate = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : undefined;
@@ -30,11 +31,41 @@ export default function ModalNuevoEgreso({ open = true, onClose }) {
     return true;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e?.preventDefault?.();
     if (!validate()) return;
-    // TODO: implementación POST para egresos en siguiente iteración
-    if (typeof onClose === 'function') onClose();
+    try {
+      setSubmitting(true);
+      const token = localStorage.getItem('token');
+      const base = import.meta.env.VITE_API_BASE_URL || 'https://montri-backend.onrender.com';
+      const data = {
+        descripcion: descripcion.trim(),
+        monto: Number(monto),
+        fecha,
+        categoria,
+        metodo_pago: metodoPago,
+        deducible: deducible === 'true',
+        comprobante: comprobante?.trim() || undefined,
+      };
+      const res = await fetch(`${base}/api/egresos`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ data }),
+      });
+      if (!res.ok) {
+        const msg = await res.text().catch(() => '');
+        throw new Error(msg || 'No se pudo registrar el egreso');
+      }
+      if (typeof onCreated === 'function') onCreated();
+      if (typeof onClose === 'function') onClose();
+    } catch (err) {
+      setError(err?.message || 'No se pudo registrar el egreso');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (!open) return null;
@@ -158,7 +189,7 @@ export default function ModalNuevoEgreso({ open = true, onClose }) {
             <button type="button" className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50" onClick={onClose}>
               Cancelar
             </button>
-            <button type="submit" className="px-4 py-2 rounded-lg text-white bg-rose-600 hover:bg-rose-700">
+            <button type="submit" className="px-4 py-2 rounded-lg text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-60 disabled:cursor-not-allowed" disabled={submitting}>
               Guardar egreso
             </button>
           </div>
@@ -167,4 +198,3 @@ export default function ModalNuevoEgreso({ open = true, onClose }) {
     </div>
   );
 }
-

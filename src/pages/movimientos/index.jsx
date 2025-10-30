@@ -1,4 +1,6 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { useAuth } from "../../context/AuthContext.jsx";
+import { getIngresos, getEgresos } from "../../services/movimientosService.js";
 import ModalNuevoIngreso from "../../components/movimientos/ModalNuevoIngreso.jsx";
 import ModalNuevoEgreso from "../../components/movimientos/ModalNuevoEgreso.jsx";
 
@@ -11,33 +13,25 @@ export default function Movimientos() {
   const [showEgresoModal, setShowEgresoModal] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
 
+  const { user, token } = useAuth();
   const fetchMovimientos = useCallback(async () => {
-    let cancelled = false;
     try {
+      if (!user?.id) {
+        console.log("[Movimientos] userId no disponible; se omite fetch.");
+        setLoading(false);
+        return;
+      }
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const base = import.meta.env.VITE_API_BASE_URL || "https://montri-backend.onrender.com";
-      const headers = {
-        Authorization: `Bearer ${token || ""}`,
-        "Content-Type": "application/json",
-      };
+      const userId = user.id;
+      const apiBase = import.meta.env.VITE_API_BASE_URL || "https://montri-backend.onrender.com";
+      console.log("🔍 Cargando ingresos de usuario:", userId);
+      console.log(`✅ GET ${apiBase}/api/ingresos`);
+      console.log(`✅ GET ${apiBase}/api/egresos`);
 
-      const parseList = async (resp) => {
-        if (!resp || !resp.ok) return [];
-        const j = await resp.json().catch(() => ({}));
-        const d = j?.data ?? j ?? {};
-        if (Array.isArray(d)) return d;
-        if (Array.isArray(d?.items)) return d.items;
-        if (Array.isArray(d?.results)) return d.results;
-        return [];
-      };
-
-      const [ri, re] = await Promise.all([
-        fetch(`${base}/api/ingresos`, { headers }),
-        fetch(`${base}/api/egresos`, { headers }),
+      const [li, le] = await Promise.all([
+        getIngresos(userId, token, apiBase),
+        getEgresos(userId, token, apiBase),
       ]);
-
-      const [li, le] = await Promise.all([parseList(ri), parseList(re)]);
       setIngresos(Array.isArray(li) ? li : []);
       setEgresos(Array.isArray(le) ? le : []);
       setError("");
@@ -46,10 +40,14 @@ export default function Movimientos() {
     } finally {
       setLoading(false);
     }
-    return () => { cancelled = true; };
-  }, []);
+  }, [user?.id, token]);
 
-  useEffect(() => { fetchMovimientos(); }, [fetchMovimientos]);
+  const fetchedRef = useRef(false);
+  useEffect(() => {
+    if (fetchedRef.current) return; // evitar doble ejecución en StrictMode
+    fetchedRef.current = true;
+    fetchMovimientos();
+  }, [fetchMovimientos]);
 
   const movimientos = useMemo(() => {
     const mapItem = (it, tipo) => ({
@@ -169,6 +167,11 @@ export default function Movimientos() {
           <ModalNuevoEgreso
             open={showEgresoModal}
             onClose={() => setShowEgresoModal(false)}
+            onCreated={() => {
+              fetchMovimientos();
+              setSuccessMsg("Egreso registrado correctamente");
+              setTimeout(() => setSuccessMsg(""), 3000);
+            }}
           />
         )}
       </div>
