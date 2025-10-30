@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { validateStatus, initProfile } from '../services/FiscalProfileService';
 
@@ -55,12 +55,15 @@ export function AuthProvider({ children }) {
 
   const jwt = token;
 
+  const validatingRef = useRef(false);
   useEffect(() => {
-    if (jwt && !profileChecked) {
-      checkFiscalProfile();
-    }
+    if (!jwt || profileChecked || validatingRef.current) return;
+    validatingRef.current = true;
+    checkFiscalProfile().finally(() => {
+      validatingRef.current = false;
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jwt]);
+  }, [jwt, profileChecked]);
 
   async function checkFiscalProfile() {
     try {
