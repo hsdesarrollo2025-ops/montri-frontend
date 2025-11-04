@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useEnums } from '../../hooks/useEnums';
+import { API_BASE_URL } from '../../config/api';
 
 export default function ModalNuevoEgreso({ open = true, onClose, onCreated }) {
   const [descripcion, setDescripcion] = useState('');
@@ -14,7 +15,7 @@ export default function ModalNuevoEgreso({ open = true, onClose, onCreated }) {
 
   const maxDate = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : undefined;
-  const apiBase = import.meta.env.VITE_API_BASE_URL || 'https://montri-backend.onrender.com';
+  const apiBase = API_BASE_URL;
   const { data: enumsData, loading: enumsLoading, error: enumsError } = useEnums(apiBase, token);
 
   const validate = () => {
@@ -37,7 +38,7 @@ export default function ModalNuevoEgreso({ open = true, onClose, onCreated }) {
     try {
       setSubmitting(true);
       const token = localStorage.getItem('token');
-      const base = import.meta.env.VITE_API_BASE_URL || 'https://montri-backend.onrender.com';
+      const base = API_BASE_URL;
       const data = {
         descripcion: descripcion.trim(),
         monto: Number(monto),

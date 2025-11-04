@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { API_URL } from '../config';
+import { API_BASE_URL } from '../config/api';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
 const DashboardPage = () => {
@@ -19,7 +19,7 @@ const DashboardPage = () => {
   useEffect(() => {
     const fetchSummary = async () => {
       try {
-        const response = await fetch(`${API_URL}/dashboard/summary`, {
+        const response = await fetch(`${API_BASE_URL}/api/dashboard/summary`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!response.ok) throw new Error('Error al obtener resumen');

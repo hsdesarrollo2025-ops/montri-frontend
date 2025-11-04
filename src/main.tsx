@@ -5,6 +5,8 @@ import App from './App.tsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import './index.css';
 
+console.log('Montri Frontend conectado a:', import.meta.env.VITE_API_BASE_URL);
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>

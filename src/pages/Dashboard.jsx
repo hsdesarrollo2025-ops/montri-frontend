@@ -27,6 +27,7 @@ import {
 } from "recharts";
 
 import MonthlyEvolutionChart from "../components/dashboard/MonthlyEvolutionChart.jsx";
+import { API_BASE_URL } from "../config/api";
 import { alertasFiscalesMock } from "../mocks/alertasFiscalesMock";
 // KPI cards are rendered inline in the JSX below
 
@@ -69,8 +70,8 @@ export default function Dashboard() {
 
       try {
 
-                const token = localStorage.getItem("token");
-        const base = import.meta.env.VITE_API_BASE_URL || "https://montri-backend.onrender.com";
+        const token = localStorage.getItem("token");
+        const base = API_BASE_URL;
         const url = `${base}/api/dashboard/summary`;
 
         const res = await fetch(url, {
@@ -222,8 +223,7 @@ export default function Dashboard() {
       try {
 
         const token = localStorage.getItem("token");
-
-        const base = import.meta.env.VITE_API_BASE_URL || "https://montri-backend.onrender.com";
+        const base = API_BASE_URL;
 
         const make = async (endpoint) => {
 

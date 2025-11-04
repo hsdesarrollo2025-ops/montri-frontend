@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { API_BASE_URL } from "../../config/api";
 import {
   ResponsiveContainer,
   BarChart,
@@ -50,7 +51,7 @@ export default function MonthlyEvolutionChart({ ingresos = [], egresos = [] }) {
         setLoading(true);
         setError(null);
         const token = localStorage.getItem("token");
-        const base = import.meta.env.VITE_API_BASE_URL || "https://montri-backend.onrender.com";
+        const base = API_BASE_URL;
         const endpoints =
           rango === "mensual"
             ? ["/api/ingresos/summary-mensual", "/api/egresos/summary-mensual"]

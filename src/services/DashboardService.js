@@ -1,4 +1,5 @@
-const BASE = 'https://montri-backend.onrender.com/api';
+import { API_BASE_URL } from '../config/api';
+const BASE = `${API_BASE_URL}/api`;
 
 export async function getDashboardSummary(jwt) {
   try {
@@ -45,4 +46,3 @@ export async function getDashboardAlerts(jwt) {
     throw error;
   }
 }
-

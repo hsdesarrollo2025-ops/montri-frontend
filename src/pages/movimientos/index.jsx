@@ -3,6 +3,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { getIngresos, getEgresos } from "../../services/movimientosService.js";
 import ModalNuevoIngreso from "../../components/movimientos/ModalNuevoIngreso.jsx";
 import ModalNuevoEgreso from "../../components/movimientos/ModalNuevoEgreso.jsx";
+import { API_BASE_URL } from "../../config/api";
 
 export default function Movimientos() {
   const [ingresos, setIngresos] = useState([]);
@@ -23,7 +24,7 @@ export default function Movimientos() {
       }
       setLoading(true);
       const userId = user.id;
-      const apiBase = import.meta.env.VITE_API_BASE_URL || "https://montri-backend.onrender.com";
+      const apiBase = API_BASE_URL;
       console.log("🔍 Cargando ingresos de usuario:", userId);
       console.log(`✅ GET ${apiBase}/api/ingresos`);
       console.log(`✅ GET ${apiBase}/api/egresos`);

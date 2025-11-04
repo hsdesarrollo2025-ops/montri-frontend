@@ -1,5 +1,6 @@
-const BASE = 'https://montri-backend.onrender.com/api/fiscal-profile';
-const TAX_BASE = 'https://montri-backend.onrender.com/api';
+import { API_BASE_URL } from '../config/api';
+const BASE = `${API_BASE_URL}/api/fiscal-profile`;
+const TAX_BASE = `${API_BASE_URL}/api`;
 
 export async function validateStatus(jwt) {
   try {
