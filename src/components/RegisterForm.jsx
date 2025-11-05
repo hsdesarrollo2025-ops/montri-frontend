@@ -5,7 +5,7 @@ import { registerUser } from '../services/AuthService';
 function validate(values) {
   const errors = {};
   if (!values.firstName || values.firstName.trim().length < 2) {
-    errors.firstName = 'El nombre es requerido (mínimo 2 caracteres).';
+    errors.firstName = 'El nombre es requerido (m��nimo 2 caracteres).';
   }
   if (!values.lastName || values.lastName.trim().length === 0) {
     errors.lastName = 'El apellido es requerido.';
@@ -15,24 +15,24 @@ function validate(values) {
   } else {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(values.email)) {
-      errors.email = 'Ingresá un correo válido.';
+      errors.email = 'Ingresǭ un correo vǭlido.';
     }
   }
   if (!values.password) {
-    errors.password = 'La contraseña es requerida.';
+    errors.password = 'La contrase��a es requerida.';
   } else {
     const pwRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
     if (!pwRegex.test(values.password)) {
-      errors.password = 'Mín. 8 caracteres, con mayúscula, minúscula y número.';
+      errors.password = 'M��n. 8 caracteres, con mayǧscula, minǧscula y nǧmero.';
     }
   }
   if (!values.confirmPassword) {
-    errors.confirmPassword = 'Confirmá tu contraseña.';
+    errors.confirmPassword = 'Confirmǭ tu contrase��a.';
   } else if (values.confirmPassword !== values.password) {
-    errors.confirmPassword = 'Las contraseñas no coinciden.';
+    errors.confirmPassword = 'Las contrase��as no coinciden.';
   }
   if (!values.acceptedTerms) {
-    errors.acceptedTerms = 'Debés aceptar los términos y condiciones.';
+    errors.acceptedTerms = 'DebǸs aceptar los tǸrminos y condiciones.';
   }
   return errors;
 }
@@ -77,23 +77,19 @@ export default function RegisterForm() {
       });
       const { user, jwt } = res || {};
 
-      if (user && user.confirmed && jwt) {
-        try {
-          localStorage.setItem('token', jwt);
-          localStorage.setItem('user', JSON.stringify(user));
-        } catch {}
+      // Registro exitoso: NO auto-login. Pedimos iniciar sesión.
+      if (user && jwt) {
         setGlobalType('success');
-        setGlobalMessage('¡Bienvenido a Montri! Tu cuenta fue creada con éxito.');
-        // Redirigir al dashboard
+        setGlobalMessage('Cuenta creada. Iniciá sesión para continuar.');
         setTimeout(() => {
-          window.location.assign('/dashboard');
+          window.location.assign('/login');
         }, 800);
         return;
       }
 
       if (user && user.confirmed === false) {
         setGlobalType('info');
-        setGlobalMessage('Te enviamos un correo para confirmar tu cuenta antes de iniciar sesión.');
+        setGlobalMessage('Te enviamos un correo para confirmar tu cuenta antes de iniciar sesi��n.');
         setTimeout(() => {
           window.location.assign('/login');
         }, 1400);
@@ -102,27 +98,27 @@ export default function RegisterForm() {
 
       // Caso inesperado pero manejado
       setGlobalType('error');
-      setGlobalMessage('Error inesperado. Intentá de nuevo.');
+      setGlobalMessage('Error inesperado. Intentǭ de nuevo.');
     } catch (err) {
       if (err && err.code === 'NETWORK_ERROR') {
         setGlobalType('error');
-        setGlobalMessage('No se pudo conectar al servidor. Intentá nuevamente.');
+        setGlobalMessage('No se pudo conectar al servidor. Intentǭ nuevamente.');
       } else if (err && err.status === 400) {
-        // Heurística sobre mensaje de Strapi
+        // Heur��stica sobre mensaje de Strapi
         const apiMsg = err.payload?.error?.message || err.payload?.message || '';
         if (typeof apiMsg === 'string' && apiMsg.toLowerCase().includes('email')) {
           setGlobalType('error');
-          setGlobalMessage('Este correo ya está registrado.');
+          setGlobalMessage('Este correo ya estǭ registrado.');
         } else if (typeof apiMsg === 'string' && apiMsg.toLowerCase().includes('username')) {
           setGlobalType('error');
-          setGlobalMessage('Este correo ya está registrado.');
+          setGlobalMessage('Este correo ya estǭ registrado.');
         } else {
           setGlobalType('error');
-          setGlobalMessage('Datos inválidos. Verificá la información e intentá nuevamente.');
+          setGlobalMessage('Datos invǭlidos. Verificǭ la informaci��n e intentǭ nuevamente.');
         }
       } else {
         setGlobalType('error');
-        setGlobalMessage('Error inesperado. Intentá de nuevo.');
+        setGlobalMessage('Error inesperado. Intentǭ de nuevo.');
       }
     } finally {
       setSubmitting(false);
@@ -182,28 +178,28 @@ export default function RegisterForm() {
         disabled={submitting}
       />
 
-      {/* CUIT eliminado del registro: se completa en el Perfil Fiscal (Sección A) */}
+      {/* CUIT eliminado del registro: se completa en el Perfil Fiscal (Secci��n A) */}
 
       <InputField
-        label="Contraseña"
+        label="Contrase��a"
         name="password"
         type="password"
         value={values.password}
         onChange={handleChange}
         onBlur={handleBlur}
-        placeholder="••••••••"
+        placeholder="�?��?��?��?��?��?��?��?�"
         error={errors.password}
         disabled={submitting}
       />
 
       <InputField
-        label="Confirmar contraseña"
+        label="Confirmar contrase��a"
         name="confirmPassword"
         type="password"
         value={values.confirmPassword}
         onChange={handleChange}
         onBlur={handleBlur}
-        placeholder="••••••••"
+        placeholder="�?��?��?��?��?��?��?��?�"
         error={errors.confirmPassword}
         disabled={submitting}
       />
@@ -222,7 +218,7 @@ export default function RegisterForm() {
         <label htmlFor="acceptedTerms" className="text-sm text-gray-700">
           Acepto los{' '}
           <a href="#terms" className="text-green-600 hover:text-green-700 underline">
-            términos y condiciones
+            tǸrminos y condiciones
           </a>
         </label>
       </div>
@@ -241,9 +237,9 @@ export default function RegisterForm() {
       </button>
 
       <p className="mt-4 text-center text-sm text-gray-600">
-        ¿Ya tenés cuenta?{' '}
+        ��Ya tenǸs cuenta?{' '}
         <a href="/login" className="text-green-600 hover:text-green-700 font-medium">
-          Iniciá sesión
+          Iniciǭ sesi��n
         </a>
       </p>
     </form>
