@@ -5,7 +5,7 @@ import { registerUser } from '../services/AuthService';
 function validate(values) {
   const errors = {};
   if (!values.firstName || values.firstName.trim().length < 2) {
-    errors.firstName = 'El nombre es requerido (m��nimo 2 caracteres).';
+    errors.firstName = 'El nombre es requerido (mínimo 2 caracteres).';
   }
   if (!values.lastName || values.lastName.trim().length === 0) {
     errors.lastName = 'El apellido es requerido.';
@@ -15,24 +15,24 @@ function validate(values) {
   } else {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(values.email)) {
-      errors.email = 'Ingresǭ un correo vǭlido.';
+      errors.email = 'Ingresá un correo válido.';
     }
   }
   if (!values.password) {
-    errors.password = 'La contrase��a es requerida.';
+    errors.password = 'La contraseña es requerida.';
   } else {
     const pwRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
     if (!pwRegex.test(values.password)) {
-      errors.password = 'M��n. 8 caracteres, con mayǧscula, minǧscula y nǧmero.';
+      errors.password = 'Mín. 8 caracteres, con mayúscula, minúscula y número.';
     }
   }
   if (!values.confirmPassword) {
-    errors.confirmPassword = 'Confirmǭ tu contrase��a.';
+    errors.confirmPassword = 'Confirmá tu contraseña.';
   } else if (values.confirmPassword !== values.password) {
-    errors.confirmPassword = 'Las contrase��as no coinciden.';
+    errors.confirmPassword = 'Las contraseñas no coinciden.';
   }
   if (!values.acceptedTerms) {
-    errors.acceptedTerms = 'DebǸs aceptar los tǸrminos y condiciones.';
+    errors.acceptedTerms = 'Debés aceptar los términos y condiciones.';
   }
   return errors;
 }
@@ -89,7 +89,7 @@ export default function RegisterForm() {
 
       if (user && user.confirmed === false) {
         setGlobalType('info');
-        setGlobalMessage('Te enviamos un correo para confirmar tu cuenta antes de iniciar sesi��n.');
+        setGlobalMessage('Te enviamos un correo para confirmar tu cuenta antes de iniciar sesión.');
         setTimeout(() => {
           window.location.assign('/login');
         }, 1400);
@@ -98,27 +98,27 @@ export default function RegisterForm() {
 
       // Caso inesperado pero manejado
       setGlobalType('error');
-      setGlobalMessage('Error inesperado. Intentǭ de nuevo.');
+      setGlobalMessage('Error inesperado. Intentá de nuevo.');
     } catch (err) {
       if (err && err.code === 'NETWORK_ERROR') {
         setGlobalType('error');
-        setGlobalMessage('No se pudo conectar al servidor. Intentǭ nuevamente.');
+        setGlobalMessage('No se pudo conectar al servidor. Intentá nuevamente.');
       } else if (err && err.status === 400) {
-        // Heur��stica sobre mensaje de Strapi
+        // Heurística sobre mensaje de Strapi
         const apiMsg = err.payload?.error?.message || err.payload?.message || '';
         if (typeof apiMsg === 'string' && apiMsg.toLowerCase().includes('email')) {
           setGlobalType('error');
-          setGlobalMessage('Este correo ya estǭ registrado.');
+          setGlobalMessage('Este correo ya está registrado.');
         } else if (typeof apiMsg === 'string' && apiMsg.toLowerCase().includes('username')) {
           setGlobalType('error');
-          setGlobalMessage('Este correo ya estǭ registrado.');
+          setGlobalMessage('Este correo ya está registrado.');
         } else {
           setGlobalType('error');
-          setGlobalMessage('Datos invǭlidos. Verificǭ la informaci��n e intentǭ nuevamente.');
+          setGlobalMessage('Datos inválidos. Verificá la información e intentá nuevamente.');
         }
       } else {
         setGlobalType('error');
-        setGlobalMessage('Error inesperado. Intentǭ de nuevo.');
+        setGlobalMessage('Error inesperado. Intentá de nuevo.');
       }
     } finally {
       setSubmitting(false);
@@ -178,28 +178,28 @@ export default function RegisterForm() {
         disabled={submitting}
       />
 
-      {/* CUIT eliminado del registro: se completa en el Perfil Fiscal (Secci��n A) */}
+      {/* CUIT eliminado del registro: se completa en el Perfil Fiscal (Sección A) */}
 
       <InputField
-        label="Contrase��a"
+        label="Contraseña"
         name="password"
         type="password"
         value={values.password}
         onChange={handleChange}
         onBlur={handleBlur}
-        placeholder="�?��?��?��?��?��?��?��?�"
+        placeholder="********"
         error={errors.password}
         disabled={submitting}
       />
 
       <InputField
-        label="Confirmar contrase��a"
+        label="Confirmar contraseña"
         name="confirmPassword"
         type="password"
         value={values.confirmPassword}
         onChange={handleChange}
         onBlur={handleBlur}
-        placeholder="�?��?��?��?��?��?��?��?�"
+        placeholder="********"
         error={errors.confirmPassword}
         disabled={submitting}
       />
@@ -218,7 +218,7 @@ export default function RegisterForm() {
         <label htmlFor="acceptedTerms" className="text-sm text-gray-700">
           Acepto los{' '}
           <a href="#terms" className="text-green-600 hover:text-green-700 underline">
-            tǸrminos y condiciones
+            términos y condiciones
           </a>
         </label>
       </div>
@@ -237,9 +237,9 @@ export default function RegisterForm() {
       </button>
 
       <p className="mt-4 text-center text-sm text-gray-600">
-        ��Ya tenǸs cuenta?{' '}
+        ¿Ya tenés cuenta?{' '}
         <a href="/login" className="text-green-600 hover:text-green-700 font-medium">
-          Iniciǭ sesi��n
+          Iniciá sesión
         </a>
       </p>
     </form>
